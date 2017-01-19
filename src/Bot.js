@@ -189,6 +189,36 @@ class Bot {
                 res.reply("No.")
             }
         })
+
+        this.command("setusername", (res, args) => {
+            if(this.isAdministrator(res.author)) {
+                let newUsername = args.join(" ")
+                this.client.user.setUsername(newUsername)
+                res.reply("I've changed my username to " + newUsername)
+            } else {
+                res.reply("You don't have permission to do this.")
+            }
+        })
+
+        this.command("setavatar", (res, args) => {
+            if(this.isAdministrator(res.author)) {
+                const request = require("request").defaults({ encoding: null })
+
+                let url = args[0]
+
+                request.get(url, (err, response, body) => {
+                    if(!err && response.statusCode == 200) {
+                        const data = "data:" + response.headers["content-type"] + ";base64," + new Buffer(body).toString("base64")
+                        this.client.user.setAvatar(data)
+                        res.reply("I've changed my avatar to <" + url + ">, does it suit me? :)")
+                    } else {
+                        res.reply("I was not able to change my avatar to <" + url + "> :(")
+                    }
+                })
+            } else {
+                res.reply("You don't have permission to do this, scrub.")
+            }
+        })
     }
 }
 
