@@ -17,25 +17,20 @@ class Response {
         return this._message.author.id
     }
 
+    get author() {
+        return this._message.author
+    }
+
+    get server() {
+        return this._message.guild
+    }
+
     get matches() {
         return this._matches
     }
 
-    sendMessageToChannel(channel, message) {
-        let promise = channel.send(message)
-
-        promise.then(message => {
-            // TODO: only show this when debugging
-            console.log("Sent message: ", message.cleanContent)
-        }).catch(err => {
-            console.error(err)
-        })
-
-        return promise
-    }
-
     send(message) {
-        return this.sendMessageToChannel(this.message.channel, message)
+        return this.bot.sendMessageToChannel(this.message.channel, message)
     }
 
     reply(message) {

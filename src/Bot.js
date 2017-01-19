@@ -78,6 +78,40 @@ class Bot {
         }
     }
 
+    sendMessageToChannel(channel, message) {
+        let promise = channel.send(message)
+
+        promise.then(message => {
+            // TODO: only show this when debugging
+            console.log("Sent message: ", message.cleanContent)
+        }).catch(err => {
+            console.error(err)
+        })
+
+        return promise
+    }
+
+    isAdministrator(user) {
+        return this.config.administrators.indexOf(user.id) > -1
+    }
+
+    isServerAdministrator(server, user) {
+        if(this.config.botAdminRightsAlsoApplyInChannels && this.isAdministrator(user)) {
+            return true
+        }
+
+        return this.hasPermission(server, user, "ADMINISTRATOR")
+    }
+
+    hasPermission(server, user, permission) {
+        return this.hasPermissions(server, user, [permission])
+    }
+
+    hasPermissions(server, user, permissionArray) {
+        let serverUser = server.members.get(user.id)
+        return serverUser.hasPermissions(permissionArray)
+    }
+
     command(commandName, callback) {
         if(!this.isReady) {
             console.warn("WARN: ISIC is not yet ready, please wait a moment before you register any commands")
@@ -134,6 +168,26 @@ class Bot {
                 `Created at: ${author.createdAt.toISOString().slice(0, 10)}\n` +
                 `Avatar:\n${author.avatarURL}`
             )
+        })
+
+        this.respond(/am i admin/g, res => {
+            let isServerAdmin = false
+
+            if(res.message.guild) {
+                isServerAdmin = this.isServerAdministrator(res.server, res.author)
+            }
+
+            let isBotAdmin = this.isAdministrator(res.author)
+
+            if(isBotAdmin && isServerAdmin) {
+                res.reply("Yes, master.")
+            } else if(isBotAdmin && !isServerAdmin) {
+                res.reply("Yes you are my master, but I can't help you on this server :'(")
+            } else if(isServerAdmin) {
+                res.reply("Yes you have Administrator rights on this server.")
+            } else {
+                res.reply("No.")
+            }
         })
     }
 }
