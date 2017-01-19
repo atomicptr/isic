@@ -1,0 +1,8 @@
+{
+    "discordToken": "YOUR_DISCORD_TOKEN",
+    "modulePaths": ["modules", "node_modules"],
+    "loadModules": true,
+    "useBuiltinActions": true,
+    "administrators": [],
+    "botAdminRightsAlsoApplyInServers": false
+}
