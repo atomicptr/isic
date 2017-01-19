@@ -1,0 +1,14 @@
+{
+  "name": "bot3",
+  "version": "0.0.1",
+  "description": "A discord bot",
+  "scripts": {
+    "start": "node main.js"
+  },
+  "author": "Christopher Kaster",
+  "license": "MIT",
+  "dependencies": {
+    "discord.js": "^11.0.0",
+    "express": "^4.14.0"
+  }
+}
