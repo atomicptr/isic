@@ -1,0 +1,5 @@
+{
+    "name": "SelfAssignRoles",
+    "ident": "github.atomicptr.selfassign-roles",
+    "main": "selfassign-roles.js"
+}

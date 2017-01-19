@@ -4,5 +4,6 @@
     "loadModules": true,
     "useBuiltinActions": true,
     "administrators": [],
-    "botAdminRightsAlsoApplyInServers": false
+    "botAdminRightsAlsoApplyInServers": false,
+    "databaseLocation": "data/"
 }

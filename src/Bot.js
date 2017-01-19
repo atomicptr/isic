@@ -2,12 +2,14 @@ const ActionParser = require("./ActionParser")
 const ModuleManager = require("./ModuleManager.js")
 
 const Discord = require("discord.js")
+const lowdb = require("lowdb")
 
 class Bot {
     constructor(config) {
         this.client = new Discord.Client()
 
         this.config = config
+        this.dbs = {}
 
         if(config.loadModules) {
             this.moduleManager = new ModuleManager(config.modulePaths)
@@ -44,6 +46,18 @@ class Bot {
 
     user(id) {
         return this.client.users.get(id)
+    }
+
+    db(server) {
+        if(!this.dbs[server.id]) {
+            const path = require("path")
+            this.dbs[server.id] = lowdb(path.resolve(process.cwd(), this.config.databaseLocation, `${server.id}.json`), {
+                writeOnChange: true,
+                storage: require("lowdb/lib/file-async")
+            })
+        }
+
+        return this.dbs[server.id]
     }
 
     onReady() {
@@ -96,7 +110,7 @@ class Bot {
     }
 
     isServerAdministrator(server, user) {
-        if(this.config.botAdminRightsAlsoApplyInChannels && this.isAdministrator(user)) {
+        if(this.config.botAdminRightsAlsoApplyInServers && this.isAdministrator(user)) {
             return true
         }
 
@@ -113,7 +127,7 @@ class Bot {
     }
 
     canI(server, permissions) {
-        return this.hasPermissions(server, this.client.user, permissions)
+        return this.hasPermission(server, this.client.user, permissions)
     }
 
     command(commandName, callback) {
@@ -124,7 +138,7 @@ class Bot {
 
         console.log(`\tregistered command action: "${commandName}"`)
 
-        this.actions.register(new RegExp(`!${commandName}\s?(.*)`), (res) => {
+        this.actions.register(new RegExp(`^!${commandName}\s?(.*)`), (res) => {
             let args = res.matches[1].trim().split(" ")
 
             // special case for when there are no args, cuz split leaves an empty string
@@ -227,6 +241,14 @@ class Bot {
                 })
             } else {
                 res.reply("You don't have permission to do this, scrub.")
+            }
+        })
+
+        this.command("hcf", (res, args) => {
+            if(this.isAdministrator(res.author)) {
+                res.reply("Aye, sir! I will proceed to kill myself.").then(_ => process.exit(0))
+            } else {
+                res.reply("You don't have the permission to initiate the self destruct protocol v2.1...")
             }
         })
     }

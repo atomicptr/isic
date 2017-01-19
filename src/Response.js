@@ -21,6 +21,10 @@ class Response {
         return this._message.author
     }
 
+    get serverId() {
+        return this._message.guild.id
+    }
+
     get server() {
         return this._message.guild
     }
