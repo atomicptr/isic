@@ -103,18 +103,22 @@ class Bot {
         return this.hasPermission(server, user, "ADMINISTRATOR")
     }
 
-    hasPermission(server, user, permission) {
-        return this.hasPermissions(server, user, [permission])
+    hasPermission(server, user, permissions) {
+        if(!Array.isArray(permissions)) {
+            permissions = [permissions]
+        }
+
+        let serverUser = server.members.get(user.id)
+        return serverUser.hasPermissions(permissions)
     }
 
-    hasPermissions(server, user, permissionArray) {
-        let serverUser = server.members.get(user.id)
-        return serverUser.hasPermissions(permissionArray)
+    canI(server, permissions) {
+        return this.hasPermissions(server, this.client.user, permissions)
     }
 
     command(commandName, callback) {
         if(!this.isReady) {
-            console.warn("WARN: ISIC is not yet ready, please wait a moment before you register any commands")
+            console.warn("WARN: Discord is not yet ready, please wait a moment before you register any commands")
             return
         }
 
@@ -122,13 +126,19 @@ class Bot {
 
         this.actions.register(new RegExp(`!${commandName}\s?(.*)`), (res) => {
             let args = res.matches[1].trim().split(" ")
+
+            // special case for when there are no args, cuz split leaves an empty string
+            if(args.length == 1 && args[0].length == 0) {
+                args = []
+            }
+
             callback(res, args)
         })
     }
 
     hear(regex, callback) {
         if(!this.isReady) {
-            console.warn("WARN: ISIC is not yet ready, please wait a moment before you register any commands")
+            console.warn("WARN: Discord is not yet ready, please wait a moment before you register any commands")
             return
         }
 
@@ -141,7 +151,7 @@ class Bot {
 
     respond(regex, callback) {
         if(!this.isReady) {
-            console.warn("WARN: ISIC is not yet ready, please wait a moment before you register any commands")
+            console.warn("WARN: Discord is not yet ready, please wait a moment before you register any commands")
             return
         }
 

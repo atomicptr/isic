@@ -25,7 +25,6 @@ class ModuleManager {
         }
 
         fs.readdir(modulePath, (err, dirs) => {
-
             for(let mod of dirs) {
                 let modPath = path.resolve(modulePath, mod)
 
