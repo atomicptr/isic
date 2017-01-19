@@ -1,6 +1,6 @@
 # isic
 
-A modular [Discord](#) bot.
+A modular [Discord](https://discordapp.com/) bot.
 
 ## Module structure
 
