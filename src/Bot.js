@@ -251,6 +251,31 @@ class Bot {
                 res.reply("You don't have the permission to initiate the self destruct protocol v2.1...")
             }
         })
+
+        this.command("prune", (res, args) => {
+            if(this.isServerAdministrator(res.server, res.author)) {
+                if(args.length > 0) {
+                    if(!isNaN(args[0])) {
+                        if(this.canI(res.server, "MANAGE_MESSAGES")) {
+                            res.message.channel.bulkDelete(args[0]).then(messages => {
+                                res.send(`Deleted ${messages.array().length} messages and added this one! :wastebasket:`)
+                            }).catch(err => {
+                                console.error(err.response.body.message)
+                                res.send(err.response.body.message)
+                            })
+                        } else {
+                            res.send("I'd love to clean up your mess, but I don't have the permission to manage messages... :angry:")
+                        }
+                    } else {
+                        res.send("What is this \"" + args[0] + "\", doesn't look like a number for me :(")
+                    }
+                } else {
+                    res.reply("I appreciate the idea of me cleaning this room but you could at least tell me how much you want me to delete :P")
+                }
+            } else {
+                res.reply("You don't have the permission to do this mate...")
+            }
+        })
     }
 }
 
