@@ -11,6 +11,8 @@ class Bot {
 
         if(config.loadModules) {
             this.moduleManager = new ModuleManager(config.modulePaths)
+        } else {
+            console.warn("WARN: You've disabled the ability to load modules.")
         }
 
         this.actions = new ActionParser(this)
@@ -40,18 +42,22 @@ class Bot {
         return this._isReady
     }
 
+    user(id) {
+        return this.client.users.get(id)
+    }
+
     onReady() {
         console.log(`${this.name}#${this.discriminator} is ready.`)
 
-        if(config.useBuiltinActions) {
+        this._isReady = true
+
+        if(this.config.useBuiltinActions) {
             this.registerBuiltinActions()
         }
 
         if(this.config.loadModules) {
             this.moduleManager.register(this)
         }
-
-        this._isReady = true
 
         for(let readyCallback of this.readyCallbacks) {
             readyCallback()
@@ -63,10 +69,11 @@ class Bot {
     }
 
     onMessage(message) {
-        console.log(`${message.author.username}#${message.author.discriminator} (${message.author.id}): ${message.content}`)
+        let isBotString = message.author.bot ? "[BOT] " : ""
+        console.log(`${isBotString}${message.author.username}#${message.author.discriminator} (${message.author.id}): ${message.content}`)
 
         // don't listen to yourself
-        if(message.author.id !== this.client.user.id) {
+        if(message.author.id !== this.client.user.id && !message.author.bot) {
             this.actions.update(message)
         }
     }
@@ -117,6 +124,16 @@ class Bot {
 
         this.respond(/ping/g, res => {
             res.reply("PONG")
+        })
+
+        this.respond(/(who am i|whoami)/g, res => {
+            let author = res.message.author
+
+            res.reply(`\nID: ${author.id}\n` +
+                `Username: ${author.username}#${author.discriminator}\n` +
+                `Created at: ${author.createdAt.toISOString().slice(0, 10)}\n` +
+                `Avatar:\n${author.avatarURL}`
+            )
         })
     }
 }

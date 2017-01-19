@@ -53,14 +53,23 @@ class ModuleManager {
     }
 
     register(bot) {
+        if(Object.keys(this.modules).length == 0) {
+            console.log("No modules found.")
+            return
+        }
+
         console.log(`Trying to register actions from my ${Object.keys(this.modules).length} known modules`)
 
-        for(let moduleName of Object.keys(this.modules)) {
-            let module = this.modules[moduleName]
+        for(let moduleIdent of Object.keys(this.modules)) {
+            let module = this.modules[moduleIdent]
 
-            console.log(`${moduleName}:`)
+            console.log(`module ${moduleIdent}:`)
 
-            require(path.resolve(module.__module_path, module.main))(bot)
+            try {
+                require(path.resolve(module.__module_path, module.main))(bot)
+            } catch(ex) {
+                console.error(`ERR: Could not register module "${moduleIdent}" in ${module.__module_path}"`, ex)
+            }
         }
     }
 }

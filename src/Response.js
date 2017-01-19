@@ -21,17 +21,29 @@ class Response {
         return this._matches
     }
 
-    send(message) {
-        this.message.channel.send(message).then(message => {
+    sendMessageToChannel(channel, message) {
+        let promise = channel.send(message)
+
+        promise.then(message => {
             // TODO: only show this when debugging
             console.log("Sent message: ", message.cleanContent)
         }).catch(err => {
             console.error(err)
         })
+
+        return promise
+    }
+
+    send(message) {
+        return this.sendMessageToChannel(this.message.channel, message)
     }
 
     reply(message) {
-        this.send(`<@${this.authorId}> ${message}`)
+        return this.send(`<@${this.authorId}> ${message}`)
+    }
+
+    sendDirectMessage(message) {
+        return this.bot.user(this.authorId).sendMessage(message)
     }
 }
 

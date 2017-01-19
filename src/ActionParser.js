@@ -19,7 +19,11 @@ class ActionParser {
             let match = message.content.match(action.trigger)
 
             if(match) {
-                action.callback(new Response(this.bot, message, match))
+                try {
+                    action.callback(new Response(this.bot, message, match))
+                } catch(ex) {
+                    console.error(`ERR: Action for message "${message.content}" failed`, ex)
+                }
             }
         }
     }
