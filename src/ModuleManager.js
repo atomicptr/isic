@@ -41,6 +41,7 @@ class ModuleManager {
                             console.error(`ERR: There is already a mod with the ident: ${modFile.ident}, ignore ${modPath}`)
                         } else {
                             this.modules[modFile.ident] = modFile
+                            this.modules[modFile.ident].__module_path = modPath
                             console.log(`\tAdded module named: "${modFile.name}" (${modFile.ident})`)
                         }
                     } else {
@@ -52,17 +53,15 @@ class ModuleManager {
     }
 
     register(bot) {
-        bot.command("ping", (res, args) => {
-            res.send("PONG!")
-        })
+        console.log(`Trying to register actions from my ${Object.keys(this.modules).length} known modules`)
 
-        bot.respond(/ping/g, (res) => {
-            res.reply("PONG!")
-        })
+        for(let moduleName of Object.keys(this.modules)) {
+            let module = this.modules[moduleName]
 
-        bot.hear(/fuck pings/g, (res) => {
-            res.reply("FUCK YOU TOO")
-        })
+            console.log(`${moduleName}:`)
+
+            require(path.resolve(module.__module_path, module.main))(bot)
+        }
     }
 }
 

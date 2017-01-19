@@ -8,8 +8,15 @@ class Bot {
         this.client = new Discord.Client()
 
         this.config = config
-        this.moduleManager = new ModuleManager(config.modulePaths)
+
+        if(config.loadModules) {
+            this.moduleManager = new ModuleManager(config.modulePaths)
+        }
+
         this.actions = new ActionParser(this)
+
+        this._isReady = false
+        this.readyCallbacks = []
 
         this.client.on("ready", this.onReady.bind(this))
         this.client.on("message", this.onMessage.bind(this))
@@ -29,10 +36,30 @@ class Bot {
         return this.client.user.discriminator
     }
 
+    get isReady() {
+        return this._isReady
+    }
+
     onReady() {
         console.log(`${this.name}#${this.discriminator} is ready.`)
 
-        this.moduleManager.register(this)
+        if(config.useBuiltinActions) {
+            this.registerBuiltinActions()
+        }
+
+        if(this.config.loadModules) {
+            this.moduleManager.register(this)
+        }
+
+        this._isReady = true
+
+        for(let readyCallback of this.readyCallbacks) {
+            readyCallback()
+        }
+    }
+
+    ready(callback) {
+        this.readyCallbacks.push(callback)
     }
 
     onMessage(message) {
@@ -45,6 +72,11 @@ class Bot {
     }
 
     command(commandName, callback) {
+        if(!this.isReady) {
+            console.warn("WARN: ISIC is not yet ready, please wait a moment before you register any commands")
+            return
+        }
+
         console.log(`\tregistered command action: "${commandName}"`)
 
         this.actions.register(new RegExp(`!${commandName}\s?(.*)`), (res) => {
@@ -54,6 +86,11 @@ class Bot {
     }
 
     hear(regex, callback) {
+        if(!this.isReady) {
+            console.warn("WARN: ISIC is not yet ready, please wait a moment before you register any commands")
+            return
+        }
+
         console.log(`\tregistered hear action: "${regex.source}"`)
 
         this.actions.register(regex, (res) => {
@@ -62,11 +99,24 @@ class Bot {
     }
 
     respond(regex, callback) {
+        if(!this.isReady) {
+            console.warn("WARN: ISIC is not yet ready, please wait a moment before you register any commands")
+            return
+        }
+
         console.log(`\tregistered respond action: "${regex.source}"`)
 
         let prefix = new RegExp(`<@${this.client.user.id}> `)
         this.actions.register(new RegExp(prefix.source + regex.source), (res) => {
             callback(res)
+        })
+    }
+
+    registerBuiltinActions() {
+        console.log("Register builtin actions:")
+
+        this.respond(/ping/g, res => {
+            res.reply("PONG")
         })
     }
 }

@@ -1,8 +1,0 @@
-{
-    "name": "ping",
-    "ident": "com.github.atomicptr.ping",
-    "main": "ping.js",
-    "permissions": [
-        "commands"
-    ]
-}
