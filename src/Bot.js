@@ -19,6 +19,7 @@ class Bot {
 
         this.actions = new ActionParser(this)
         this.intervalActions = {}
+        this.messageObservers = {}
 
         this._isReady = false
         this.readyCallbacks = []
@@ -103,6 +104,11 @@ class Bot {
             delete this.intervalActions[ident]
     }
 
+    message(ident, func) {
+        console.log("\tregistered message observer " + ident)
+        this.messageObservers[ident] = func
+    }
+
     ready(callback) {
         this.readyCallbacks.push(callback)
     }
@@ -114,6 +120,8 @@ class Bot {
         // don't listen to yourself
         if(message.author.id !== this.client.user.id && !message.author.bot) {
             this.actions.update(message)
+
+            Object.keys(this.messageObservers).every(ident => this.messageObservers[ident](message))
         }
     }
 
