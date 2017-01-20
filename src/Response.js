@@ -29,6 +29,14 @@ class Response {
         return this._message.guild
     }
 
+    get channelId() {
+        return this._message.channel.id
+    }
+
+    get channel() {
+        return this._message.channel
+    }
+
     get matches() {
         return this._matches
     }
