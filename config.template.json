@@ -1,6 +1,7 @@
 {
     "discordToken": "YOUR_DISCORD_TOKEN",
     "modulePaths": ["modules", "node_modules"],
+    "intervalInSeconds": 30,
     "loadModules": true,
     "useBuiltinActions": true,
     "administrators": [],

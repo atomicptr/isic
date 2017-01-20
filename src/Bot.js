@@ -18,6 +18,7 @@ class Bot {
         }
 
         this.actions = new ActionParser(this)
+        this.intervalActions = {}
 
         this._isReady = false
         this.readyCallbacks = []
@@ -42,6 +43,10 @@ class Bot {
 
     get isReady() {
         return this._isReady
+    }
+
+    get servers() {
+        return this.client.guilds.array()
     }
 
     user(id) {
@@ -76,6 +81,26 @@ class Bot {
         for(let readyCallback of this.readyCallbacks) {
             readyCallback()
         }
+
+        this.interval_id = setInterval(this.onInterval.bind(this), this.config.intervalInSeconds * 1000)
+        this.onInterval()
+    }
+
+    onInterval() {
+        for(let ident of Object.keys(this.intervalActions)) {
+            this.intervalActions[ident]()
+        }
+    }
+
+    interval(ident, func) {
+        console.log("\tregistered interval action " + ident)
+        this.intervalActions[ident] = func
+    }
+
+    clearInterval(ident) {
+        console.log("\t- unregistered interval action " + ident)
+        if(this.intervalActions[ident])
+            delete this.intervalActions[ident]
     }
 
     ready(callback) {
