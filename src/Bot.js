@@ -22,6 +22,7 @@ class Bot {
         this.messageObservers = []
 
         this._isReady = false
+        this._isSetup = false
         this.readyCallbacks = []
 
         this.client.on("ready", this.onReady.bind(this))
@@ -69,22 +70,26 @@ class Bot {
     onReady() {
         console.log(`${this.name}#${this.discriminator} is ready.`)
 
-        this._isReady = true
+        if(!this._isSetup) {
+            this._isReady = true
 
-        if(this.config.useBuiltinActions) {
-            this.registerBuiltinActions()
+            if(this.config.useBuiltinActions) {
+                this.registerBuiltinActions()
+            }
+
+            if(this.config.loadModules) {
+                this.moduleManager.register(this)
+            }
+
+            for(let readyCallback of this.readyCallbacks) {
+                readyCallback()
+            }
+
+            this.intervalId = setInterval(this.onInterval.bind(this), this.config.intervalInSeconds * 1000)
+            this.onInterval()
+
+            this._isSetup = true
         }
-
-        if(this.config.loadModules) {
-            this.moduleManager.register(this)
-        }
-
-        for(let readyCallback of this.readyCallbacks) {
-            readyCallback()
-        }
-
-        this.interval_id = setInterval(this.onInterval.bind(this), this.config.intervalInSeconds * 1000)
-        this.onInterval()
     }
 
     onInterval() {
