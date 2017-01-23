@@ -3,12 +3,23 @@ const ModuleManager = require("./ModuleManager.js")
 
 const Discord = require("discord.js")
 const lowdb = require("lowdb")
+const path = require("path")
 
 class Bot {
     constructor(config) {
+        const defaultSettings = {
+            "modulePaths": ["modules", "node_modules"],
+            "intervalInSeconds": 1,
+            "loadModules": true,
+            "useBuiltinActions": true,
+            "administrators": [],
+            "botAdminRightsAlsoApplyInServers": true,
+            "databaseLocation": "data/"
+        }
+
         this.client = new Discord.Client()
 
-        this.config = config
+        this.config = Object.assign({}, defaultSettings, config)
         this.dbs = {}
 
         if(config.loadModules) {
@@ -56,15 +67,22 @@ class Bot {
     }
 
     db(server) {
-        if(!this.dbs[server.id]) {
-            const path = require("path")
-            this.dbs[server.id] = lowdb(path.resolve(process.cwd(), this.config.databaseLocation, `${server.id}.json`), {
+        return this.rawdb(`S${server.id}`)
+    }
+
+    userdb(userId) {
+        return this.rawdb(`U${userId}`)
+    }
+
+    rawdb(dbName) {
+        if(!this.dbs[dbName]) {
+            this.dbs[dbName] = lowdb(path.resolve(process.cwd(), this.config.databaseLocation, `${dbName}.json`), {
                 writeOnChange: true,
                 storage: require("lowdb/lib/file-async")
             })
         }
 
-        return this.dbs[server.id]
+        return this.dbs[dbName]
     }
 
     onReady() {
@@ -94,7 +112,11 @@ class Bot {
 
     onInterval() {
         for(let ident of Object.keys(this.intervalActions)) {
-            this.intervalActions[ident]()
+            try {
+                this.intervalActions[ident]()
+            } catch(ex) {
+                console.error(`ERR: Interval "${ident}" failed`, ex)
+            }
         }
     }
 
@@ -126,7 +148,11 @@ class Bot {
         if(message.author.id !== this.client.user.id && !message.author.bot) {
             this.actions.update(message)
 
-            this.messageObservers.every(obs => obs(message))
+            try {
+                this.messageObservers.every(obs => obs(message))
+            } catch(ex) {
+                console.error(`ERR: Message listener for message "${message.content}" failed`, ex)
+            }
         }
     }
 
@@ -252,6 +278,16 @@ class Bot {
             }
         })
 
+        this.command("botlink", (res, args) => {
+            if(this.isAdministrator(res.author)) {
+                res.sendDirectMessage(`You can add me to servers by using this URL:\n\n` +
+                    `https://discordapp.com/api/oauth2/authorize?client_id=${this.client.user.id}&scope=bot&permissions=0`)
+                res.send(":ok_hand:")
+            } else {
+                res.send(":thumbsdown:")
+            }
+        })
+
         this.command("setusername", (res, args) => {
             if(this.isAdministrator(res.author)) {
                 let newUsername = args.join(" ")
@@ -296,7 +332,9 @@ class Bot {
                     if(!isNaN(args[0])) {
                         if(this.canI(res.server, "MANAGE_MESSAGES")) {
                             res.message.channel.bulkDelete(args[0]).then(messages => {
-                                res.send(`Deleted ${messages.array().length} messages and added this one! :wastebasket:`)
+                                res.send(`Deleted ${messages.array().length} messages and added this one! :wastebasket:`).then(message => {
+                                    message.delete(5000) // delete this message after 5s
+                                })
                             }).catch(err => {
                                 console.error(err.response.body.message)
                                 res.send(err.response.body.message)
