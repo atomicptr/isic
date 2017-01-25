@@ -66,12 +66,28 @@ class Bot {
         return this.client.users.get(id)
     }
 
-    db(server) {
-        return this.rawdb(`S${server.id}`)
-    }
+    db(handle) {
+        // to be able to handle just responses, makes it easier to support DMs with the bot
+        if(handle.constructor.name === "Response") {
+            if(handle.server) {
+                return this.db(res.server)
+            }
 
-    userdb(userId) {
-        return this.rawdb(`U${userId}`)
+            if(handle.channel.type === "dm") {
+                return this.db(res.author)
+            }
+        } else if(handle.constructor.name === "Guild") {
+            return this.rawdb(`S${handle.id}`)
+        } else if(handle.constructor.name === "User") {
+            return this.rawdb(`U${handle.id}`)
+        }
+
+        if(!handle.id) {
+            console.error("Unknown handle, can't create db from it: ", handle)
+            return null
+        }
+
+        return this.rawdb(handle.id)
     }
 
     rawdb(dbName) {
@@ -99,14 +115,16 @@ class Bot {
                 this.moduleManager.register(this)
             }
 
-            for(let readyCallback of this.readyCallbacks) {
-                readyCallback()
-            }
-
             this.intervalId = setInterval(this.onInterval.bind(this), this.config.intervalInSeconds * 1000)
             this.onInterval()
 
             this._isSetup = true
+        }
+
+        // ready callbacks should be called on every ready event from discord, which is why this
+        // is not part of the if statement above
+        for(let readyCallback of this.readyCallbacks) {
+            readyCallback()
         }
     }
 
