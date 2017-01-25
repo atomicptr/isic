@@ -1,0 +1,5 @@
+{
+    "name": "Votes",
+    "ident": "github.atomicptr.votes",
+    "main": "votes.js"
+}
