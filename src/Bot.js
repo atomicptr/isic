@@ -70,11 +70,11 @@ class Bot {
         // to be able to handle just responses, makes it easier to support DMs with the bot
         if(handle.constructor.name === "Response") {
             if(handle.server) {
-                return this.db(res.server)
+                return this.db(handle.server)
             }
 
             if(handle.channel.type === "dm") {
-                return this.db(res.author)
+                return this.db(handle.author)
             }
         } else if(handle.constructor.name === "Guild") {
             return this.rawdb(`S${handle.id}`)

@@ -8,7 +8,7 @@ module.exports = function(bot) {
 
             let text = args.join(" ")
 
-            bot.db(res.server).defaults({isicVotingChannels: {}})
+            bot.db(res.server).defaults({isicVotingChannels: {}}).value()
 
             let votes = bot.db(res.server).get("isicVotingChannels").value()
 
@@ -32,7 +32,7 @@ module.exports = function(bot) {
 
     bot.command("endvote", (res, args) => {
         if(bot.canI(res.server, ["ADD_REACTIONS", "MANAGE_MESSAGES"])) {
-            bot.db(res.server).defaults({isicVotingChannels: {}})
+            bot.db(res.server).defaults({isicVotingChannels: {}}).value()
 
             let votes = bot.db(res.server).get("isicVotingChannels").value()
 
