@@ -1,16 +1,16 @@
 module.exports = function(bot) {
     bot.command("vote", (res, args) => {
-        if(bot.canI(res.server, ["ADD_REACTIONS", "MANAGE_MESSAGES"])) {
-            if(!bot.isServerAdministrator(res.server, res.author) || !bot.hasPermission(res.server, res.author, ["MANAGE_MESSAGES"])) {
+        if(res.canI(["ADD_REACTIONS", "MANAGE_MESSAGES"])) {
+            if(!res.authorIsServerAdministrator || !res.authorHasPermission(["MANAGE_MESSAGES"])) {
                 res.send("You don't have permission to create votes. You'd need to be able to manage messages to do that.")
                 return
             }
 
             let text = args.join(" ")
 
-            bot.db(res.server).defaults({isicVotingChannels: {}}).value()
+            res.db.defaults({isicVotingChannels: {}}).value()
 
-            let votes = bot.db(res.server).get("isicVotingChannels").value()
+            let votes = res.db.get("isicVotingChannels").value()
 
             const vote = votes[res.channelId]
 
@@ -23,7 +23,7 @@ module.exports = function(bot) {
             res.send("**Now voting on**: " + text).then(message => {
                 message.react("✅").then(_ => message.react("❌").then(_ => message.pin()))
 
-                bot.db(res.server).set(`isicVotingChannels.${res.channelId}`, {messageId: message.id, text: text}).value()
+                res.db.set(`isicVotingChannels.${res.channelId}`, {messageId: message.id, text: text}).value()
             })
         } else {
             res.send("I can't create votes without having ADD_REACTIONS and MANAGE_MESSAGES permissions.")
@@ -31,10 +31,10 @@ module.exports = function(bot) {
     })
 
     bot.command("endvote", (res, args) => {
-        if(bot.canI(res.server, ["ADD_REACTIONS", "MANAGE_MESSAGES"])) {
-            bot.db(res.server).defaults({isicVotingChannels: {}}).value()
+        if(res.canI(["ADD_REACTIONS", "MANAGE_MESSAGES"])) {
+            res.db.defaults({isicVotingChannels: {}}).value()
 
-            let votes = bot.db(res.server).get("isicVotingChannels").value()
+            let votes = res.db.get("isicVotingChannels").value()
 
             const vote = votes[res.channelId]
 
@@ -45,7 +45,7 @@ module.exports = function(bot) {
             }
 
             res.channel.fetchMessage(vote.messageId).then(message => {
-                if(!bot.isServerAdministrator(res.server, res.author) || res.author.id === message.author.id) {
+                if(!res.authorIsServerAdministrator || res.author.id === message.author.id) {
                     res.send("You don't have permission to end votes. You have to be either the person who started it or an administrator.")
                     return
                 }
@@ -59,9 +59,9 @@ module.exports = function(bot) {
                 res.send(`**End vote**: ${vote.text}\n\n${options.join("\n")}`).then(_ => {
                     message.unpin()
 
-                    let state = bot.db(res.server).getState()
+                    let state = res.db.getState()
                     delete state.isicVotingChannels[res.channelId]
-                    bot.db(res.server).setState(state)
+                    res.db.setState(state)
                 })
             })
         } else {

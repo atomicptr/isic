@@ -2,11 +2,11 @@
 
 module.exports = function(bot) {
     function plus1(res) {
-        bot.db(res).defaults({counter: 0}).value()
+        res.db.defaults({counter: 0}).value()
         let counter = bot.db(res).get("counter").value()
 
         res.send(`I don't know what you're counting but it's at ${++counter} now`).then(message => {
-            bot.db(res).set("counter", counter).value()
+            res.db.set("counter", counter).value()
         })
     }
 

@@ -49,8 +49,33 @@ class Response {
         return this.send(`<@${this.authorId}> ${message}`)
     }
 
+    random(messages) {
+        let message = messages[Math.floor(Math.random() * messages.length)]
+        this.send(message)
+    }
+
     sendDirectMessage(message) {
         return this.bot.user(this.authorId).sendMessage(message)
+    }
+
+    get authorIsAdministrator() {
+        return this.bot.isAdministrator(this.author)
+    }
+
+    get authorIsServerAdministrator() {
+        return this.bot.isServerAdministrator(this.server, this.author)
+    }
+
+    canI(permissions) {
+        return this.bot.canI(this.server, permissions)
+    }
+
+    authorHasPermission(permissions) {
+        return this.bot.hasPermission(this.server, this.author, permissions)
+    }
+
+    get db() {
+        return this.bot.db(this)
     }
 }
 

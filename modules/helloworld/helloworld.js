@@ -8,7 +8,7 @@ module.exports = function(bot) {
         }
 
         res.reply(`Hello, ${name}!`).then(message => {
-            if(bot.canI(res.server, "ADD_REACTIONS")) {
+            if(res.canI("ADD_REACTIONS")) {
                 message.react("😁")
             }
         })
