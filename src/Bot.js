@@ -12,8 +12,8 @@ const request = require("request")
 class Bot {
     constructor(config) {
         const defaultSettings = {
-            "modulePaths": ["modules", "node_modules"],
-            "intervalInSeconds": 1,
+            "modulePaths": ["node_modules"],
+            "intervalInSeconds": 300,
             "loadModules": true,
             "useBuiltinActions": true,
             "administrators": [],
@@ -26,8 +26,8 @@ class Bot {
         this.config = Object.assign({}, defaultSettings, config)
         this.dbs = {}
 
-        if(config.loadModules) {
-            this.moduleManager = new ModuleManager(config.modulePaths)
+        if(this.config.loadModules) {
+            this.moduleManager = new ModuleManager(this.config.modulePaths)
         } else {
             console.warn("WARN: You've disabled the ability to load modules.")
         }
