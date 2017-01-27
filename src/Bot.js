@@ -333,19 +333,11 @@ class Bot {
         })
 
         this.respond(/am i admin/g, res => {
-            let isServerAdmin = false
-
-            if(res.message.guild) {
-                isServerAdmin = this.isServerAdministrator(res.server, res.author)
-            }
-
-            let isBotAdmin = this.isAdministrator(res.author)
-
-            if(isBotAdmin && isServerAdmin) {
+            if(res.authorIsAdministrator && res.authorIsServerAdministrator) {
                 res.reply("Yes, master.")
-            } else if(isBotAdmin && !isServerAdmin) {
+            } else if(res.authorIsAdministrator && !res.authorIsServerAdministrator) {
                 res.reply("Yes you are my master, but I can't help you on this server :'(")
-            } else if(isServerAdmin) {
+            } else if(res.authorIsServerAdministrator) {
                 res.reply("Yes you have Administrator rights on this server.")
             } else {
                 res.reply("No.")
@@ -353,7 +345,7 @@ class Bot {
         })
 
         this.command("botlink", (res, args) => {
-            if(this.isAdministrator(res.author)) {
+            if(res.authorIsAdministrator) {
                 res.sendDirectMessage(`You can add me to servers by using this URL:\n\n` +
                     `https://discordapp.com/api/oauth2/authorize?client_id=${this.client.user.id}&scope=bot&permissions=0`)
                 res.send(":ok_hand:")
@@ -363,7 +355,7 @@ class Bot {
         })
 
         this.command("setusername", (res, args) => {
-            if(this.isAdministrator(res.author)) {
+            if(res.authorIsAdministrator) {
                 let newUsername = args.join(" ")
                 this.client.user.setUsername(newUsername)
                 res.reply("I've changed my username to " + newUsername)
@@ -373,7 +365,7 @@ class Bot {
         })
 
         this.command("setavatar", (res, args) => {
-            if(this.isAdministrator(res.author)) {
+            if(res.authorIsAdministrator) {
                 const request = require("request").defaults({ encoding: null })
 
                 let url = args[0]
@@ -393,7 +385,7 @@ class Bot {
         })
 
         this.command("hcf", (res, args) => {
-            if(this.isAdministrator(res.author)) {
+            if(res.authorIsAdministrator) {
                 res.reply("Aye, sir! I will proceed to kill myself.").then(_ => process.exit(0))
             } else {
                 res.reply("You don't have the permission to initiate the self destruct protocol v2.1...")
@@ -401,10 +393,10 @@ class Bot {
         })
 
         this.command("prune", (res, args) => {
-            if(this.isServerAdministrator(res.server, res.author)) {
+            if(res.authorIsServerAdministrator) {
                 if(args.length > 0) {
                     if(!isNaN(args[0])) {
-                        if(this.canI(res.server, "MANAGE_MESSAGES")) {
+                        if(res.canI("MANAGE_MESSAGES")) {
                             res.message.channel.bulkDelete(args[0]).then(messages => {
                                 res.send(`Deleted ${messages.array().length} messages and added this one! :wastebasket:`).then(message => {
                                     message.delete(5000) // delete this message after 5s
