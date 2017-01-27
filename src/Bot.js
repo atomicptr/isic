@@ -4,6 +4,10 @@ const ModuleManager = require("./ModuleManager.js")
 const Discord = require("discord.js")
 const lowdb = require("lowdb")
 const path = require("path")
+const fs = require("fs")
+
+const crypto = require("crypto")
+const request = require("request")
 
 class Bot {
     constructor(config) {
@@ -67,6 +71,11 @@ class Bot {
     }
 
     db(handle) {
+        if(!handle) {
+            console.error("handle was null?", handle)
+            return null
+        }
+
         // to be able to handle just responses, makes it easier to support DMs with the bot
         if(handle.constructor.name === "Response") {
             if(handle.server) {
@@ -99,6 +108,40 @@ class Bot {
         }
 
         return this.dbs[dbName]
+    }
+
+    forEveryUserWithDatabase(callback) {
+        fs.readdir(path.resolve(process.cwd(), this.config.databaseLocation), (err, items) => {
+            if(err) {
+                console.error(err)
+                throw err;
+            }
+
+            let userDatabases = items.filter(i => i.startsWith("U"))
+
+            for(let userdb of userDatabases) {
+                let regex = /U(.*)\.json/g
+
+                let matches = regex.exec(userdb)
+
+                if(matches.length > 1) {
+                    const userId = matches[1]
+                    const user = this.client.users.get(userId)
+
+                    callback(user)
+                }
+            }
+        })
+    }
+
+    hash(str) {
+        const sha = crypto.createHash("sha256")
+        sha.update(str)
+        return sha.digest("hex")
+    }
+
+    request(args) {
+        return request.apply(null, arguments)
     }
 
     onReady() {
@@ -200,6 +243,10 @@ class Bot {
     }
 
     hasPermission(server, user, permissions) {
+        if(!server || !user) {
+            return false
+        }
+
         if(!Array.isArray(permissions)) {
             permissions = [permissions]
         }
