@@ -13,3 +13,9 @@ let bot = new Bot(config)
 bot.ready(_ => {
     bot.client.user.setGame("Node " + process.version)
 })
+
+bot.setup(_ => {
+    bot.command("testa", (res, args) => {
+        res.random(["This", "is", "sparta"])
+    })
+})

@@ -39,6 +39,7 @@ class Bot {
         this._isReady = false
         this._isSetup = false
         this.readyCallbacks = []
+        this.setupCallbacks = []
 
         this.client.on("ready", this.onReady.bind(this))
         this.client.on("message", this.onMessage.bind(this))
@@ -158,6 +159,10 @@ class Bot {
                 this.moduleManager.register(this)
             }
 
+            for(let setupCallback of this.setupCallbacks) {
+                setupCallback()
+            }
+
             this.intervalId = setInterval(this.onInterval.bind(this), this.config.intervalInSeconds * 1000)
             this.onInterval()
 
@@ -199,6 +204,10 @@ class Bot {
 
     ready(callback) {
         this.readyCallbacks.push(callback)
+    }
+
+    setup(callback) {
+        this.setupCallbacks.push(callback)
     }
 
     onMessage(message) {

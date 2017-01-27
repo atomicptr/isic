@@ -16,7 +16,7 @@ const IsicBot = require("isic")
 let bot = new IsicBot({discordToken: "YOUR_DISCORD_TOKEN"})
 
 // after bot is ready
-bot.ready(() => {
+bot.setup(() => {
 
     // add your own commands
     bot.command("test", (res, args) => {
