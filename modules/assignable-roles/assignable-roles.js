@@ -1,9 +1,5 @@
 module.exports = function(bot) {
 
-    function userCanChangeRoles(res) {
-        return bot.hasPermission(res.server, res.author, "MANAGE_ROLES_OR_PERMISSIONS")
-    }
-
     function addRole(res, args) {
         if(args.length != 1) {
             showHelp(res)
@@ -12,7 +8,7 @@ module.exports = function(bot) {
 
         let roleName = args[0]
 
-        let roles = bot.db(res.server).get("selfAssignableRoles").value()
+        let roles = res.db.get("selfAssignableRoles").value()
 
         if(roles.indexOf(roleName) > -1) {
             let user = res.server.members.get(res.authorId)
@@ -35,7 +31,7 @@ module.exports = function(bot) {
 
         let roleName = args[0]
 
-        let roles = bot.db(res.server).get("selfAssignableRoles").value()
+        let roles = res.db.get("selfAssignableRoles").value()
 
         if(roles.indexOf(roleName) > -1) {
             let user = res.server.members.get(res.authorId)
@@ -51,7 +47,7 @@ module.exports = function(bot) {
     }
 
     function listRoles(res) {
-        const roles = bot.db(res.server).get("selfAssignableRoles").value()
+        const roles = res.db.get("selfAssignableRoles").value()
         let rolesStr = roles.map(r => `* ${r}`)
 
         if(roles.length > 0) {
@@ -62,7 +58,7 @@ module.exports = function(bot) {
     }
 
     function makeRoleAssignable(res, args) {
-        if(!userCanChangeRoles) {
+        if(!res.authorHasPermission("MANAGE_ROLES_OR_PERMISSIONS")) {
             res.reply("You don't have the permission to do this")
             showHelp(res)
             return
@@ -75,7 +71,7 @@ module.exports = function(bot) {
 
         let roleName = args[0]
 
-        let rolesdb = bot.db(res.server).get("selfAssignableRoles")
+        let rolesdb = res.db.get("selfAssignableRoles")
         let availableRoles = res.server.roles.filterArray(r => r.mentionable).map(r => r.name)
 
         if(availableRoles.indexOf(roleName) > -1) {
@@ -89,14 +85,14 @@ module.exports = function(bot) {
     }
 
     function showHelp(res) {
-        let roleAssignableString = userCanChangeRoles(res) ? "\n!role assignable **ROLE_NAME**" : ""
+        let roleAssignableString = res.authorHasPermission("MANAGE_ROLES_OR_PERMISSIONS") ? "\n!role assignable **ROLE_NAME**" : ""
         res.reply("Use the command like this:\n!role add **ROLE_NAME**\n!role remove **ROLE_NAME**\n!role list" +
             roleAssignableString + "\n\nPlease note that only mentionable roles are self assignable")
     }
 
     bot.command("role", (res, args) => {
-        if(bot.canI(res.server, "MANAGE_ROLES_OR_PERMISSIONS")) {
-            bot.db(res.server).defaults({ selfAssignableRoles: [] }).value()
+        if(res.canI("MANAGE_ROLES_OR_PERMISSIONS")) {
+            res.db.defaults({ selfAssignableRoles: [] }).value()
 
             if(args.length > 0) {
                 switch(args[0]) {
