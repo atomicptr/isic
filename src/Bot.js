@@ -88,7 +88,7 @@ class Bot {
             }
         } else if(handle.constructor.name === "Guild") {
             return this.rawdb(`S${handle.id}`)
-        } else if(handle.constructor.name === "User") {
+        } else if(handle.constructor.name === "User" || handle.constructor.name === "ClientUser") {
             return this.rawdb(`U${handle.id}`)
         }
 
@@ -111,27 +111,44 @@ class Bot {
         return this.dbs[dbName]
     }
 
-    forEveryUserWithDatabase(callback) {
+    get mydb() {
+        return this.db(this.client.user)
+    }
+
+    forEveryDatabase(condition, callback) {
         fs.readdir(path.resolve(process.cwd(), this.config.databaseLocation), (err, items) => {
             if(err) {
                 console.error(err)
                 throw err;
             }
 
-            let userDatabases = items.filter(i => i.startsWith("U"))
+            function getDatabaseOwners(prefix, getOwner) {
+                let databases = items.filter(i => i.startsWith(prefix))
 
-            for(let userdb of userDatabases) {
-                let regex = /U(.*)\.json/g
+                let owners = []
 
-                let matches = regex.exec(userdb)
+                for(let db of databases) {
+                    let regex = new RegExp(`${prefix}(.*)\.json`, "g")
 
-                if(matches.length > 1) {
-                    const userId = matches[1]
-                    const user = this.client.users.get(userId)
+                    let matches = regex.exec(db)
 
-                    callback(user)
+                    if(matches.length > 1) {
+                        const id = matches[1]
+                        owners.push(getOwner(id))
+                    }
                 }
+
+                return owners
             }
+
+            let servers = getDatabaseOwners("S", id => this.client.guilds.get(id))
+            let users = getDatabaseOwners("U", id => this.client.users.get(id))
+
+            let owners = servers.concat(users)
+
+            let filtered = owners.map(o => ({owner: o, db: this.db(o)})).filter(pair => condition(pair.owner, pair.db))
+
+            filtered.forEach(pair => callback(pair.owner, pair.db))
         })
     }
 
