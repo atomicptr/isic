@@ -414,8 +414,9 @@ class Bot {
                 if(args.length > 0) {
                     if(!isNaN(args[0])) {
                         if(res.canI("MANAGE_MESSAGES")) {
-                            res.message.channel.bulkDelete(args[0]).then(messages => {
-                                res.send(`Deleted ${messages.array().length} messages and added this one! :wastebasket:`).then(message => {
+                            // +1 since you also want to get rid of the message saying "!prune 2"
+                            res.message.channel.bulkDelete(Number(args[0]) + 1).then(messages => {
+                                res.send(`Deleted ${messages.array().length - 1} messages and added this one! :wastebasket:`).then(message => {
                                     message.delete(5000) // delete this message after 5s
                                 })
                             }).catch(err => {
