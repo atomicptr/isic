@@ -248,7 +248,7 @@ class Bot {
 
         promise.then(message => {
             // TODO: only show this when debugging
-            console.log("Sent message: ", message.cleanContent)
+            // console.log("Sent message: ", message.cleanContent)
         }).catch(err => {
             console.error(err)
         })
