@@ -11,5 +11,7 @@ const Bot = require("./src/Bot.js")
 let bot = new Bot(config)
 
 bot.ready(_ => {
+    console.log(`### Running github.atomicptr.isic v${require("./package.json").version} on Node ${process.version}`)
+
     bot.client.user.setGame("Node " + process.version)
 })
