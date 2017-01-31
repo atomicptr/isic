@@ -353,16 +353,14 @@ class Bot {
         })
 
         this.respond(/(who am i|whoami)/g, res => {
-            let author = res.message.author
+            res.sendEmbed("Here is the information you've requested.", embed => {
+                let author = res.message.author
 
-            let embed = new Discord.RichEmbed()
-
-            embed.addField(`ID`, `${author.id}`)
-            embed.addField(`Username`, `${author.username}#${author.discriminator}`)
-            embed.addField(`Created at`, `${author.createdAt.toISOString().slice(0, 10)}`)
-            embed.setImage(author.avatarURL)
-
-            res.channel.sendEmbed(embed, "Here is the information you've requested.")
+                embed.addField(`ID`, `${author.id}`)
+                embed.addField(`Username`, `${author.username}#${author.discriminator}`)
+                embed.addField(`Created at`, `${author.createdAt.toISOString().slice(0, 10)}`)
+                embed.setImage(author.avatarURL)
+            })
         })
 
         this.respond(/am i admin/g, res => {

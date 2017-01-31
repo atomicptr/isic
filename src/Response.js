@@ -1,3 +1,5 @@
+const Discord = require("discord.js")
+
 class Response {
     constructor(bot, message, matches) {
         this._bot = bot
@@ -56,6 +58,12 @@ class Response {
 
     sendDirectMessage(message) {
         return this.bot.user(this.authorId).sendMessage(message)
+    }
+
+    sendEmbed(message, callback) {
+        let embed = new Discord.RichEmbed()
+        callback(embed)
+        this.channel.sendEmbed(embed, message)
     }
 
     get authorIsAdministrator() {
