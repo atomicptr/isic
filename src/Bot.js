@@ -116,39 +116,52 @@ class Bot {
     }
 
     forEveryDatabase(condition, callback) {
-        fs.readdir(path.resolve(process.cwd(), this.config.databaseLocation), (err, items) => {
-            if(err) {
-                console.error(err)
-                throw err;
-            }
+        condition = condition || function() {return true}
+        callback = callback || function() {}
 
-            function getDatabaseOwners(prefix, getOwner) {
-                let databases = items.filter(i => i.startsWith(prefix))
-
-                let owners = []
-
-                for(let db of databases) {
-                    let regex = new RegExp(`${prefix}(.*)\.json`, "g")
-
-                    let matches = regex.exec(db)
-
-                    if(matches.length > 1) {
-                        const id = matches[1]
-                        owners.push(getOwner(id))
-                    }
+        return new Promise((resolve, reject) => {
+            fs.readdir(path.resolve(process.cwd(), this.config.databaseLocation), (err, items) => {
+                if(err) {
+                    console.error(err)
+                    reject(err)
+                    return
                 }
 
-                return owners
-            }
+                function getDatabaseOwners(prefix, getOwner) {
+                    let databases = items.filter(i => i.startsWith(prefix))
 
-            let servers = getDatabaseOwners("S", id => this.client.guilds.get(id))
-            let users = getDatabaseOwners("U", id => this.client.users.get(id))
+                    let owners = []
 
-            let owners = servers.concat(users)
+                    for(let db of databases) {
+                        let regex = new RegExp(`${prefix}(.*)\.json`, "g")
 
-            let filtered = owners.map(o => ({owner: o, db: this.db(o)})).filter(pair => condition(pair.owner, pair.db))
+                        let matches = regex.exec(db)
 
-            filtered.forEach(pair => callback(pair.owner, pair.db))
+                        if(matches.length > 1) {
+                            const id = matches[1]
+                            owners.push(getOwner(id))
+                        }
+                    }
+
+                    return owners
+                }
+
+                let servers = getDatabaseOwners("S", id => this.client.guilds.get(id))
+                let users = getDatabaseOwners("U", id => this.client.users.get(id))
+
+                let owners = servers.concat(users)
+
+                try {
+                    let filtered = owners.map(o => ({owner: o, db: this.db(o)})).filter(pair => condition(pair.owner, pair.db))
+
+                    filtered.forEach(pair => callback(pair.owner, pair.db))
+
+                    resolve(filtered)
+                } catch(ex) {
+                    console.error(ex)
+                    reject(ex)
+                }
+            })
         })
     }
 
@@ -342,11 +355,14 @@ class Bot {
         this.respond(/(who am i|whoami)/g, res => {
             let author = res.message.author
 
-            res.reply(`\nID: ${author.id}\n` +
-                `Username: ${author.username}#${author.discriminator}\n` +
-                `Created at: ${author.createdAt.toISOString().slice(0, 10)}\n` +
-                `Avatar:\n${author.avatarURL}`
-            )
+            let embed = new Discord.RichEmbed()
+
+            embed.addField(`ID`, `${author.id}`)
+            embed.addField(`Username`, `${author.username}#${author.discriminator}`)
+            embed.addField(`Created at`, `${author.createdAt.toISOString().slice(0, 10)}`)
+            embed.setImage(author.avatarURL)
+
+            res.channel.sendEmbed(embed, "Here is the information you've requested.")
         })
 
         this.respond(/am i admin/g, res => {
