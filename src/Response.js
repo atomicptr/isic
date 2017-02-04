@@ -82,6 +82,10 @@ class Response {
         return this.bot.hasPermission(this.server, this.author, permissions)
     }
 
+    serverEmoji(name, altText) {
+        return this.bot.serverEmoji(this.server, name, altText)
+    }
+
     get db() {
         return this.bot.db(this)
     }

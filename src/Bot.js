@@ -298,6 +298,29 @@ class Bot {
         return this.hasPermission(server, this.client.user, permissions)
     }
 
+    emojiExists(server, name) {
+        return server.emojis.filterArray(e => e.name === name).length > 0
+    }
+
+    serverEmoji(server, name, altText) {
+        try {
+            const emojis = server.emojis.filterArray(e => e.name === name)
+
+            if(emojis.length > 0) {
+                let [emoji, ...rest] = emojis
+                return `<:${name}:${emoji.id}>`
+            }
+        } catch(ex) {
+            console.error(ex)
+        }
+
+        if(altText) {
+            return altText
+        }
+
+        return name
+    }
+
     command(commandName, callback) {
         if(!this.isReady) {
             console.warn("WARN: Discord is not yet ready, please wait a moment before you register any commands")
