@@ -115,7 +115,7 @@ class Module {
                         this.bot.contextLog.error({from: this.identifier, channel: message.channel}, `${this.identifier}: Action failed for message "${message.content}"`, ex)
                     }
                 } else {
-                    this.bot.contextLog.warn({from: this.identifier, channel: message.channel}, `I don't have the permission to execute module ${this.identifier} in ${message.guild.id} need [${this._moduleConfig.requiresPermission.join(", ")}]`)
+                    this.bot.contextLog.warn({from: this.identifier, channel: message.channel}, `I don't have the permission to execute module ${this.identifier} need [${this._moduleConfig.requiresPermission.join(", ")}]`)
                 }
             }
         }

@@ -18,6 +18,10 @@ class DiscordHandler extends Discord.Client {
     }
 
     hasPermission(server, user, permissions) {
+        if(!server && user) {
+            return true // is probably a DM
+        }
+
         if(!server || !user) {
             return false
         }
