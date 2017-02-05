@@ -11,12 +11,12 @@ You can either clone this directory and run the bot via ```npm start``` or insta
 You can use isic as a npm package:
 
 ```javascript
-const IsicBot = require("isic")
+const {Bot} = require("isic")
 
-let bot = new IsicBot({discordToken: "YOUR_DISCORD_TOKEN"})
+let bot = new Bot({discordToken: "YOUR_DISCORD_TOKEN"})
 
 // after bot is ready
-bot.setup(() => {
+bot.on("setup", () => {
 
     // add your own commands
     bot.command("test", (res, args) => {
@@ -39,7 +39,6 @@ Example for ```module.json```:
 
 ```json
 {
-    "name": "HelloWorld",
     "ident": "github.atomicptr.HelloWorld",
     "main": "helloworld.js"
 }
