@@ -1,74 +1,70 @@
 const fs = require("fs")
 const path = require("path")
 
+const Module = require("./Module")
+
 class ModuleManager {
-    constructor(modulePath) {
-        if(!Array.isArray(modulePath)) {
-            modulePath = [modulePath]
+    constructor(bot) {
+        this.bot = bot
+        this.modules = {}
+    }
+
+    registerModule(modConfig, registerFunction) {
+        if(!(modConfig.identifier || modConfig.ident)) {
+            this.bot.log.error("A module MUST have an identifier...")
+            return
         }
 
-        this.modulePaths = modulePath.map(p => path.resolve(process.cwd(), p))
+        if(!modConfig.identifier && modConfig.ident) {
+            modConfig.identifier = modConfig.ident
+        }
 
-        console.log(`Trying to read modules at: ${this.modulePaths.join(", ")}`)
+        if(!registerFunction) {
+            registerFunction = function() {}
+        }
 
-        this.modules = {}
-
-        for(let modulePath of this.modulePaths) {
-            this.loadModulesFromDirectory(modulePath)
+        if(!this.modules[modConfig.identifier]) {
+            this.modules[modConfig.identifier] = new Module(this.bot, modConfig, registerFunction)
+        } else {
+            this.bot.log.error(`Failed to add a module with the identifier ${modConfig.identifier}. A module with this identifier already exists...`)
         }
     }
 
     loadModulesFromDirectory(modulePath) {
         if(!fs.existsSync(modulePath)) {
-            console.error(`ERR: Module path: ${modulePath} does not exist...`)
+            this.bot.log.error(`Failed to load modules from directory ${modulePath}, because it does not exist...`)
             return
         }
 
-        fs.readdir(modulePath, (err, dirs) => {
-            for(let mod of dirs) {
-                let modPath = path.resolve(modulePath, mod)
+        let dirs = fs.readdirSync(modulePath)
 
-                let modFilePath = path.resolve(modPath, "module.json")
-                let exists = fs.existsSync(modFilePath)
+        this.bot.log.info(`Scanning "${path.resolve(process.cwd(), modulePath)}" for modules...`)
 
-                if(exists) {
-                    let modFile = require(modFilePath)
-                    console.log(`Loading module... ${modPath}`)
+        for(let mod of dirs) {
+            let modPath = path.resolve(modulePath, mod)
 
-                    if(modFile.ident && modFile.name && modFile.main) {
-                        if(Object.keys(this.modules).indexOf(modFile.ident) > 0) {
-                            console.error(`ERR: There is already a mod with the ident: ${modFile.ident}, ignore ${modPath}`)
-                        } else {
-                            this.modules[modFile.ident] = modFile
-                            this.modules[modFile.ident].__module_path = modPath
-                            console.log(`\tAdded module named: "${modFile.name}" (${modFile.ident})`)
-                        }
-                    } else {
-                        console.error(`ERR: Module ${modPath} doesn't seem to be a valid module, the module.json file must contain the keys: name, ident and main`)
-                    }
+            let modFilePath = path.resolve(modPath, "module.json")
+            let exists = fs.existsSync(modFilePath)
+
+            if(exists) {
+                let modFile = require(modFilePath)
+
+                if((modFile.identifier || modFile.ident) && modFile.main) {
+                    this.bot.log.info(`Module ${modPath} found.`)
+
+                    let registerFunc = require(path.resolve(modPath, modFile.main))
+
+                    this.registerModule(modFile, registerFunc)
+                } else {
+                    this.bot.log.warn(`The module at ${modPath} does't seem to be a valid module, the module.json file must contain an "identifier" and a "main" file.`)
                 }
             }
-        })
+        }
     }
 
-    register(bot) {
-        if(Object.keys(this.modules).length == 0) {
-            console.log("No modules found.")
-            return
-        }
-
-        console.log(`Trying to register actions from my ${Object.keys(this.modules).length} known modules`)
-
-        for(let moduleIdent of Object.keys(this.modules)) {
-            let module = this.modules[moduleIdent]
-
-            console.log(`module ${moduleIdent}:`)
-
-            try {
-                require(path.resolve(module.__module_path, module.main))(bot)
-            } catch(ex) {
-                console.error(`ERR: Could not register module "${moduleIdent}" in ${module.__module_path}"`, ex)
-            }
+    onMessage(message) {
+        for(let identifier of Object.keys(this.modules)) {
+            this.modules[identifier].update(message)
         }
     }
 }

@@ -1,79 +1,166 @@
-const ActionParser = require("./ActionParser")
-const ModuleManager = require("./ModuleManager.js")
+const EventEmitter = require("events")
 
-const Discord = require("discord.js")
-const lowdb = require("lowdb")
-const path = require("path")
-const fs = require("fs")
+const DiscordHandler = require("./DiscordHandler")
+const ModuleManager = require("./ModuleManager")
+const Module = require("./Module")
 
 const crypto = require("crypto")
 const request = require("request")
+const fs = require("fs")
+const path = require("path")
 
-class Bot {
+const mkdirp = require("mkdirp")
+const lowdb = require("lowdb")
+
+class Bot extends EventEmitter {
     constructor(config) {
-        const defaultSettings = {
-            "modulePaths": ["node_modules"],
-            "intervalInSeconds": 300,
-            "loadModules": true,
-            "useBuiltinActions": true,
-            "administrators": [],
-            "botAdminRightsAlsoApplyInServers": true,
-            "databaseLocation": "data/"
+        super()
+
+        if(!config || !config.discordToken) {
+            throw "No Discord bot token found."
         }
 
-        this.client = new Discord.Client()
+        const defaultSettings = {
+            intervalInSeconds: 300,
+            administrators: [],
+            modulePaths: [],
+            loadModules: true,
+            useBuiltinActions: true,
+            botAdminRightsAlsoApplyInServers: false,
+            databaseLocation: "data/"
+        }
 
         this.config = Object.assign({}, defaultSettings, config)
+        this.client = new DiscordHandler(this, this.config.discordToken)
+
+        this.moduleManager = new ModuleManager(this)
+        this.builtins = null
+
         this.dbs = {}
 
-        if(this.config.loadModules) {
-            this.moduleManager = new ModuleManager(this.config.modulePaths)
-        } else {
-            console.warn("WARN: You've disabled the ability to load modules.")
-        }
-
-        this.actions = new ActionParser(this)
-        this.intervalActions = {}
-        this.messageObservers = []
-
-        this._isReady = false
-        this._isSetup = false
-        this.readyCallbacks = []
-        this.setupCallbacks = []
+        this.isSetup = false
 
         this.client.on("ready", this.onReady.bind(this))
-        this.client.on("message", this.onMessage.bind(this))
-
-        this.client.login(this.config.discordToken)
     }
 
-    get id() {
-        return this.client.user.id
+    get discord() {
+        return this.client
     }
 
-    get name() {
-        return this.client.user.username
+    get clientUser() {
+        return this.client.user
     }
 
-    get discriminator() {
-        return this.client.user.discriminator
+    // should only be called from bot internals
+    get log() {
+        return {
+            // TODO: add a logger here
+            info: (...message) => console.log("[INFO]", ...message),
+            debug: (...message) => console.log("[DEBUG]", ...message),
+            error: (...message) => console.error("[ERR]", ...message),
+            warn: (...message) => console.warn("[WARN]", ...message)
+        }
     }
 
-    get isReady() {
-        return this._isReady
+    // logs with context wohoo
+    get contextLog() {
+        return {
+            // TODO: add a logger here
+            info: (context, ...message) => console.log("[INFO]", ...message),
+            debug: (context, ...message) => console.log("[DEBUG]", ...message),
+            error: (context, ...message) => console.error("[ERR]", ...message),
+            warn: (context, ...message) => console.warn("[WARN]", ...message)
+        }
     }
 
-    get servers() {
-        return this.client.guilds.array()
+    onReady() {
+        this.log.info(`Bot ${this.clientUser.username}#${this.clientUser.discriminator} ready event triggered`)
+
+        // setup
+        if(!this.isSetup) {
+            const dbpath = path.resolve(process.cwd(), this.config.databaseLocation)
+            if(!fs.existsSync(dbpath)) {
+                mkdirp.sync(dbpath)
+            }
+
+            // register builtins
+            if(this.config.useBuiltinActions) {
+                this.builtins = this.moduleManager.registerModule(
+                    {identifier: "builtins"}, this.registerBuiltins.bind(this))
+            }
+
+            // load modules from paths
+            if(this.config.loadModules) {
+                for(let modulePath of this.config.modulePaths) {
+                    this.moduleManager.loadModulesFromDirectory(modulePath)
+                }
+            }
+
+            this.client.on("message", this.onMessage.bind(this))
+
+            this.intervalId = setInterval(() => this.emit("interval"), this.config.intervalInSeconds * 1000)
+
+            this.emit("interval")
+            this.emit("setup")
+
+            this.isSetup = true
+        }
+
+        this.emit("ready")
     }
 
-    user(id) {
-        return this.client.users.get(id)
+    onMessage(message) {
+        this.log.debug(`${message.author.bot ? "[BOT] " : ""}${message.author.username}#${message.author.discriminator} (${message.author.id}): ${message.content}`)
+
+        // don't listen to yourself or other bots
+        if(message.author.id !== this.clientUser.id && !message.author.bot) {
+            this.moduleManager.onMessage(message)
+        }
+
+        this.emit("message", message)
+    }
+
+    isAdministrator(user) {
+        return this.config.administrators.indexOf(user.id) > -1
+    }
+
+    isServerAdministrator(server, user) {
+        if(this.config.botAdminRightsAlsoApplyInServers && this.isAdministrator(user)) {
+            return true
+        }
+
+        return this.discord.hasPermission(server, user, "ADMINISTRATOR")
+    }
+
+    command(commandName, callback) {
+        return this.builtins.command(commandName, callback)
+    }
+
+    hear(regex, callback) {
+        return this.builtins.hear(regex, callback)
+    }
+
+    respond(regex, callback) {
+        return this.builtins.respond(regex, callback)
+    }
+
+    interval(ident, callback) {
+        return this.builtins.interval(ident, callback)
+    }
+
+    hash(str) {
+        const sha = crypto.createHash("sha256")
+        sha.update(str)
+        return sha.digest("hex")
+    }
+
+    request(args) {
+        return request.apply(null, arguments)
     }
 
     db(handle) {
         if(!handle) {
-            console.error("handle was null?", handle)
+            this.log.error("handle was null?", handle)
             return null
         }
 
@@ -93,7 +180,7 @@ class Bot {
         }
 
         if(!handle.id) {
-            console.error("Unknown handle, can't create db from it: ", handle)
+            this.log.error("Unknown handle, can't create db from it: ", handle)
             return null
         }
 
@@ -122,7 +209,7 @@ class Bot {
         return new Promise((resolve, reject) => {
             fs.readdir(path.resolve(process.cwd(), this.config.databaseLocation), (err, items) => {
                 if(err) {
-                    console.error(err)
+                    this.log.error(err)
                     reject(err)
                     return
                 }
@@ -158,224 +245,21 @@ class Bot {
 
                     resolve(filtered)
                 } catch(ex) {
-                    console.error(ex)
+                    this.log.error(ex)
                     reject(ex)
                 }
             })
         })
     }
 
-    hash(str) {
-        const sha = crypto.createHash("sha256")
-        sha.update(str)
-        return sha.digest("hex")
-    }
+    registerBuiltins(mod) {
+        this.log.debug("Register builtin actions:")
 
-    request(args) {
-        return request.apply(null, arguments)
-    }
-
-    onReady() {
-        console.log(`${this.name}#${this.discriminator} is ready.`)
-
-        if(!this._isSetup) {
-            this._isReady = true
-
-            if(this.config.useBuiltinActions) {
-                this.registerBuiltinActions()
-            }
-
-            if(this.config.loadModules) {
-                this.moduleManager.register(this)
-            }
-
-            for(let setupCallback of this.setupCallbacks) {
-                setupCallback()
-            }
-
-            this.intervalId = setInterval(this.onInterval.bind(this), this.config.intervalInSeconds * 1000)
-            this.onInterval()
-
-            this._isSetup = true
-        }
-
-        // ready callbacks should be called on every ready event from discord, which is why this
-        // is not part of the if statement above
-        for(let readyCallback of this.readyCallbacks) {
-            readyCallback()
-        }
-    }
-
-    onInterval() {
-        for(let ident of Object.keys(this.intervalActions)) {
-            try {
-                this.intervalActions[ident]()
-            } catch(ex) {
-                console.error(`ERR: Interval "${ident}" failed`, ex)
-            }
-        }
-    }
-
-    interval(ident, func) {
-        console.log("\tregistered interval action " + ident)
-        this.intervalActions[ident] = func
-    }
-
-    clearInterval(ident) {
-        console.log("\t- unregistered interval action " + ident)
-        if(this.intervalActions[ident])
-            delete this.intervalActions[ident]
-    }
-
-    message(func) {
-        console.log("\tregistered message observer")
-        this.messageObservers.push(func)
-    }
-
-    ready(callback) {
-        this.readyCallbacks.push(callback)
-    }
-
-    setup(callback) {
-        this.setupCallbacks.push(callback)
-    }
-
-    onMessage(message) {
-        let isBotString = message.author.bot ? "[BOT] " : ""
-        console.log(`${isBotString}${message.author.username}#${message.author.discriminator} (${message.author.id}): ${message.content}`)
-
-        // don't listen to yourself
-        if(message.author.id !== this.client.user.id && !message.author.bot) {
-            this.actions.update(message)
-
-            try {
-                this.messageObservers.every(obs => obs(message))
-            } catch(ex) {
-                console.error(`ERR: Message listener for message "${message.content}" failed`, ex)
-            }
-        }
-    }
-
-    sendMessageToChannel(channel, message) {
-        let promise = channel.send(message)
-
-        promise.then(message => {
-            // TODO: only show this when debugging
-            // console.log("Sent message: ", message.cleanContent)
-        }).catch(err => {
-            console.error(err)
-        })
-
-        return promise
-    }
-
-    isAdministrator(user) {
-        return this.config.administrators.indexOf(user.id) > -1
-    }
-
-    isServerAdministrator(server, user) {
-        if(this.config.botAdminRightsAlsoApplyInServers && this.isAdministrator(user)) {
-            return true
-        }
-
-        return this.hasPermission(server, user, "ADMINISTRATOR")
-    }
-
-    hasPermission(server, user, permissions) {
-        if(!server || !user) {
-            return false
-        }
-
-        if(!Array.isArray(permissions)) {
-            permissions = [permissions]
-        }
-
-        let serverUser = server.members.get(user.id)
-        return serverUser.hasPermissions(permissions)
-    }
-
-    canI(server, permissions) {
-        return this.hasPermission(server, this.client.user, permissions)
-    }
-
-    emojiExists(server, name) {
-        return server.emojis.filterArray(e => e.name === name).length > 0
-    }
-
-    serverEmoji(server, name, altText) {
-        try {
-            const emojis = server.emojis.filterArray(e => e.name === name)
-
-            if(emojis.length > 0) {
-                let [emoji, ...rest] = emojis
-                return `<:${name}:${emoji.id}>`
-            }
-        } catch(ex) {
-            console.error("Potentially wanted TypeError for property 'emojis' of null, because server can be a DM", ex)
-        }
-
-        if(typeof altText !== "undefined") {
-            return altText
-        }
-
-        return name
-    }
-
-    command(commandName, callback) {
-        if(!this.isReady) {
-            console.warn("WARN: Discord is not yet ready, please wait a moment before you register any commands")
-            return
-        }
-
-        console.log(`\tregistered command action: "${commandName}"`)
-
-        this.actions.register(new RegExp(`^!${commandName}\s?(.*)`), (res) => {
-            let args = res.matches[1].trim().split(" ")
-
-            // special case for when there are no args, cuz split leaves an empty string
-            if(args.length == 1 && args[0].length == 0) {
-                args = []
-            }
-
-            callback(res, args)
-        })
-    }
-
-    hear(regex, callback) {
-        if(!this.isReady) {
-            console.warn("WARN: Discord is not yet ready, please wait a moment before you register any commands")
-            return
-        }
-
-        console.log(`\tregistered hear action: "${regex.source}"`)
-
-        this.actions.register(regex, (res) => {
-            callback(res)
-        })
-    }
-
-    respond(regex, callback) {
-        if(!this.isReady) {
-            console.warn("WARN: Discord is not yet ready, please wait a moment before you register any commands")
-            return
-        }
-
-        console.log(`\tregistered respond action: "${regex.source}"`)
-
-        let prefix = new RegExp(`<@${this.client.user.id}> `)
-        this.actions.register(new RegExp(prefix.source + regex.source), (res) => {
-            callback(res)
-        })
-    }
-
-    registerBuiltinActions() {
-        console.log("Register builtin actions:")
-
-        this.respond(/ping/g, res => {
+        mod.respond(/ping/g, res => {
             res.reply("PONG")
         })
 
-        this.respond(/(who am i|whoami)/g, res => {
+        mod.respond(/(who am i|whoami)/g, res => {
             res.sendEmbed("Here is the information you've requested.", embed => {
                 let author = res.message.author
 
@@ -386,7 +270,7 @@ class Bot {
             })
         })
 
-        this.respond(/am i admin/g, res => {
+        mod.respond(/am i admin/g, res => {
             if(res.authorIsAdministrator && res.authorIsServerAdministrator) {
                 res.reply("Yes, master.")
             } else if(res.authorIsAdministrator && !res.authorIsServerAdministrator) {
@@ -398,7 +282,7 @@ class Bot {
             }
         })
 
-        this.command("botlink", (res, args) => {
+        mod.command("botlink", (res, args) => {
             if(res.authorIsAdministrator) {
                 res.sendDirectMessage(`You can add me to servers by using this URL:\n\n` +
                     `https://discordapp.com/api/oauth2/authorize?client_id=${this.client.user.id}&scope=bot&permissions=0`)
@@ -408,17 +292,17 @@ class Bot {
             }
         })
 
-        this.command("setusername", (res, args) => {
+        mod.command("setusername", (res, args) => {
             if(res.authorIsAdministrator) {
                 let newUsername = args.join(" ")
                 this.client.user.setUsername(newUsername)
                 res.reply("I've changed my username to " + newUsername)
             } else {
-                res.reply("You don't have permission to do this.")
+                res.reply("You don't have permission to do mod.")
             }
         })
 
-        this.command("setavatar", (res, args) => {
+        mod.command("setavatar", (res, args) => {
             if(res.authorIsAdministrator) {
                 const request = require("request").defaults({ encoding: null })
 
@@ -438,7 +322,7 @@ class Bot {
             }
         })
 
-        this.command("hcf", (res, args) => {
+        mod.command("hcf", (res, args) => {
             if(res.authorIsAdministrator) {
                 res.reply("Aye, sir! I will proceed to kill myself.").then(_ => process.exit(0))
             } else {
@@ -446,7 +330,7 @@ class Bot {
             }
         })
 
-        this.command("prune", (res, args) => {
+        mod.command("prune", (res, args) => {
             if(res.authorIsServerAdministrator) {
                 if(args.length > 0) {
                     if(!isNaN(args[0])) {
@@ -457,7 +341,7 @@ class Bot {
                                     message.delete(5000) // delete this message after 5s
                                 })
                             }).catch(err => {
-                                console.error(err.response.body.message)
+                                this.log.error(err.response.body.message)
                                 res.send(err.response.body.message)
                             })
                         } else {

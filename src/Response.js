@@ -1,8 +1,9 @@
 const Discord = require("discord.js")
 
 class Response {
-    constructor(bot, message, matches) {
+    constructor(bot, mod, message, matches) {
         this._bot = bot
+        this._module = mod
         this._message = message
         this._matches = matches
     }
@@ -11,8 +12,24 @@ class Response {
         return this._bot
     }
 
+    get module() {
+        return this._module
+    }
+
     get message() {
         return this._message
+    }
+
+    get matches() {
+        return this._matches
+    }
+
+    get discord() {
+        return this.bot.discord
+    }
+
+    get clientUser() {
+        return this.discord.user
     }
 
     get authorId() {
@@ -39,12 +56,12 @@ class Response {
         return this._message.channel
     }
 
-    get matches() {
-        return this._matches
-    }
-
     send(message) {
-        return this.bot.sendMessageToChannel(this.message.channel, message)
+        let promise = this.message.channel.send(message)
+
+        promise.catch(err => this.bot.contextLog({from: this.module.identifier, channel: this.channel}, err))
+
+        return promise
     }
 
     reply(message) {
@@ -53,11 +70,11 @@ class Response {
 
     random(messages) {
         let message = messages[Math.floor(Math.random() * messages.length)]
-        this.send(message)
+        return this.send(message)
     }
 
     sendDirectMessage(message) {
-        return this.bot.user(this.authorId).sendMessage(message)
+        return this.discord.findUser(this.authorId).sendMessage(message)
     }
 
     sendEmbed(message, callback) {
@@ -75,15 +92,15 @@ class Response {
     }
 
     canI(permissions) {
-        return this.bot.canI(this.server, permissions)
+        return this.discord.canI(this.server, permissions)
     }
 
     authorHasPermission(permissions) {
-        return this.bot.hasPermission(this.server, this.author, permissions)
+        return this.discord.hasPermission(this.server, this.author, permissions)
     }
 
     serverEmoji(name, altText) {
-        return this.bot.serverEmoji(this.server, name, altText)
+        return this.discord.serverEmoji(this.server, name, altText)
     }
 
     get db() {

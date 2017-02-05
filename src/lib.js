@@ -1,1 +1,3 @@
-module.exports = require("./Bot.js")
+module.exports = {
+    Bot: require("./Bot.js")
+}
