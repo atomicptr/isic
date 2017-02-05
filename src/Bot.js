@@ -311,10 +311,10 @@ class Bot {
                 return `<:${name}:${emoji.id}>`
             }
         } catch(ex) {
-            console.error(ex)
+            console.error("Potentially wanted TypeError for property 'emojis' of null, because server can be a DM", ex)
         }
 
-        if(altText) {
+        if(typeof altText !== "undefined") {
             return altText
         }
 
