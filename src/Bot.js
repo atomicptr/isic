@@ -120,18 +120,6 @@ class Bot extends EventEmitter {
         this.emit("message", message)
     }
 
-    isAdministrator(user) {
-        return this.config.administrators.indexOf(user.id) > -1
-    }
-
-    isServerAdministrator(server, user) {
-        if(this.config.botAdminRightsAlsoApplyInServers && this.isAdministrator(user)) {
-            return true
-        }
-
-        return this.discord.hasPermission(server, user, "ADMINISTRATOR")
-    }
-
     command(commandName, callback) {
         return this.builtins.command(commandName, callback)
     }

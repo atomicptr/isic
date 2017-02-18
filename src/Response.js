@@ -84,11 +84,11 @@ class Response {
     }
 
     get authorIsAdministrator() {
-        return this.bot.isAdministrator(this.author)
+        return this.discord.isAdministrator(this.author)
     }
 
     get authorIsServerAdministrator() {
-        return this.bot.isServerAdministrator(this.server, this.author)
+        return this.discord.isServerAdministrator(this.server, this.author)
     }
 
     canI(permissions) {

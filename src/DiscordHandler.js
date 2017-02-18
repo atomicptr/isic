@@ -42,6 +42,18 @@ class DiscordHandler extends Discord.Client {
         return this.hasPermission(server, this.user, permissions)
     }
 
+    isAdministrator(user) {
+        return this.bot.config.administrators.indexOf(user.id) > -1
+    }
+
+    isServerAdministrator(server, user) {
+        if(this.bot.config.botAdminRightsAlsoApplyInServers && this.isAdministrator(user)) {
+            return true
+        }
+
+        return this.discord.hasPermission(server, user, "ADMINISTRATOR")
+    }
+
     emojiExists(server, name) {
         return server.emojis.filterArray(e => e.name === name).length > 0
     }

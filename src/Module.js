@@ -122,19 +122,19 @@ class Module {
     }
 
     log(messages) {
-        this.bot.contextLog({from: this.identifier}, ...messages)
+        this.bot.contextLog.info({from: this.identifier}, messages)
     }
 
     error(messages) {
-        this.bot.contextLog({from: this.identifier}, ...messages)
+        this.bot.contextLog.error({from: this.identifier}, messages)
     }
 
     debug(messages) {
-        this.bot.contextLog({from: this.identifier}, ...messages)
+        this.bot.contextLog.debug({from: this.identifier}, messages)
     }
 
     warn(messages) {
-        this.bot.contextLog({from: this.identifier}, ...messages)
+        this.bot.contextLog.warn({from: this.identifier}, messages)
     }
 
     // some of this is mostly for compat with 0.2.x
