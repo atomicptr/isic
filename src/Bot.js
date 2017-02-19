@@ -100,13 +100,12 @@ class Bot extends EventEmitter {
 
             this.intervalId = setInterval(() => this.emit("interval"), this.config.intervalInSeconds * 1000)
 
-            this.emit("interval")
             this.emit("setup")
-
             this.isSetup = true
         }
 
         this.emit("ready")
+        this.emit("interval")
     }
 
     onMessage(message) {
