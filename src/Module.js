@@ -154,6 +154,14 @@ class Module {
         return this.discord.serverEmoji(server, name, altText)
     }
 
+    isAdministrator(user) {
+        return this.discord.isAdministrator(user)
+    }
+
+    isServerAdministrator(server, user) {
+        return this.discord.isServerAdministrator(server, user)
+    }
+
     db(handle) {
         return this.bot.db(handle)
     }
