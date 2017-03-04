@@ -95,9 +95,10 @@ class Module {
     onInterval() {
         for(let ident of Object.keys(this._intervalActions)) {
             try {
+                this.bot.contextLog.debug({from: this.identifier}, `interval ${ident} emitted...`)
                 this._intervalActions[ident]()
             } catch(ex) {
-                this.bot.contextLog.error(`Interval "${ident}" failed`, ex)
+                this.bot.contextLog.error({from: this.identifier}, `Interval "${ident}" failed`, ex)
             }
         }
     }
