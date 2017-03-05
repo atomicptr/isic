@@ -11,8 +11,7 @@
   "dependencies": {
     "discord.js": "^11.0.0",
     "express": "^4.15.0",
-    "lowdb": "^0.15.5",
-    "mkdirp": "^0.5.1",
+    "mongodb": "^2.2.24",
     "request": "^2.80.0"
   }
 }

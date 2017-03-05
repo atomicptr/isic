@@ -108,4 +108,8 @@ module.exports = function(mod) {
         res.send("Emitting interval event...")
         mod.bot.emit("interval")
     })
+
+    mod.command("debug:db", (res, args) => {
+        res.collection.find({})
+    })
 }

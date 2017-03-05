@@ -8,22 +8,18 @@ module.exports = function(bot) {
 
             let text = args.join(" ")
 
-            res.db.defaults({isicVotingChannels: {}}).value()
+            res.collection("channels").findOne({channelId: res.channelId}).then(vote => {
+                if(vote) {
+                    // a vote is already happening in this channel, end it in the future? TODO
+                    res.send("There is already a vote running in this channel, you can end it with !endvote.")
+                    return
+                }
 
-            let votes = res.db.get("isicVotingChannels").value()
+                res.send("**Now voting on**: " + text).then(message => {
+                    message.react("✅").then(_ => message.react("❌").then(_ => message.pin()))
 
-            const vote = votes[res.channelId]
-
-            if(vote) {
-                // a vote is already happening in this channel, end it in the future? TODO
-                res.send("There is already a vote running in this channel, you can end it with !endvote.")
-                return
-            }
-
-            res.send("**Now voting on**: " + text).then(message => {
-                message.react("✅").then(_ => message.react("❌").then(_ => message.pin()))
-
-                res.db.set(`isicVotingChannels.${res.channelId}`, {messageId: message.id, text: text}).value()
+                    res.collection("channels").insert({channelId: res.channelId, messageId: message.id, text: text})
+                })
             })
         } else {
             res.send("I can't create votes without having ADD_REACTIONS and MANAGE_MESSAGES permissions.")
@@ -32,36 +28,29 @@ module.exports = function(bot) {
 
     bot.command("endvote", (res, args) => {
         if(res.canI(["ADD_REACTIONS", "MANAGE_MESSAGES"])) {
-            res.db.defaults({isicVotingChannels: {}}).value()
-
-            let votes = res.db.get("isicVotingChannels").value()
-
-            const vote = votes[res.channelId]
-
-            if(!vote) {
-                // a vote is already happening in this channel, end it in the future? TODO
-                res.send("There is no vote at the moment.")
-                return
-            }
-
-            res.channel.fetchMessage(vote.messageId).then(message => {
-                if(!res.authorIsServerAdministrator || res.author.id === message.author.id) {
-                    res.send("You don't have permission to end votes. You have to be either the person who started it or an administrator.")
+            res.collection("channels").findOne({channelId: res.channelId}).then(vote => {
+                if(!vote) {
+                    res.send("There is no vote at the moment.")
                     return
                 }
 
-                let reactions = message.reactions.array()
+                res.channel.fetchMessage(vote.messageId).then(message => {
+                    if(!res.authorIsServerAdministrator || res.author.id === message.author.id) {
+                        res.send("You don't have permission to end votes. You have to be either the person who started it or an administrator.")
+                        return
+                    }
 
-                reactions = reactions.filter(m => m._emoji.name === "✅" || m._emoji.name === "❌")
+                    let reactions = message.reactions.array()
 
-                let options = reactions.map(reaction => `* ${reaction._emoji.name} with ${reaction.count - 1} votes`)
+                    reactions = reactions.filter(m => m._emoji.name === "✅" || m._emoji.name === "❌")
 
-                res.send(`**End vote**: ${vote.text}\n\n${options.join("\n")}`).then(_ => {
-                    message.unpin()
+                    let options = reactions.map(reaction => `* ${reaction._emoji.name} with ${reaction.count - 1} votes`)
 
-                    let state = res.db.getState()
-                    delete state.isicVotingChannels[res.channelId]
-                    res.db.setState(state)
+                    res.send(`**End vote**: ${vote.text}\n\n${options.join("\n")}`).then(_ => {
+                        message.unpin()
+
+                        res.collection("channels").remove({channelId: res.channelId})
+                    })
                 })
             })
         } else {

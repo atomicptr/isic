@@ -7,11 +7,12 @@ if(!fs.existsSync("./config.json")) {
 
 const config = require("./config.json")
 const Bot = require("./src/Bot.js")
+const packageJson = require("./package.json")
 
 let bot = new Bot(config)
 
 bot.on("ready", _ => {
-    bot.log.info(`### Running github.atomicptr.isic v${require("./package.json").version} on Node ${process.version}`)
+    bot.log.info(`### Running github.atomicptr.isic v${packageJson.version} on Node ${process.version}`)
 
-    bot.client.user.setGame("Node " + process.version)
+    bot.client.user.setGame(`ISIC: v${packageJson.version}, Node: ${process.version}`)
 })

@@ -1,10 +1,24 @@
 {
-    "discordToken": "YOUR_DISCORD_TOKEN",
-    "modulePaths": ["modules", "node_modules"],
-    "intervalInSeconds": 300,
-    "loadModules": true,
-    "useBuiltinActions": true,
-    "administrators": [],
-    "botAdminRightsAlsoApplyInServers": false,
-    "databaseLocation": "data/"
+    "token": "YOUR_DISCORD_TOKEN",
+    "interval": 300,
+
+    "management": {
+        "administrators": [],
+        "webui": false,
+        "admin_rights_apply_in_server": false
+    },
+
+    "modules": {
+        "paths": ["modules", "node_modules"],
+        "load": true,
+        "builtins": true
+    },
+
+    "database": {
+        "host": "localhost",
+        "port": 27017,
+        "database": "isic",
+        "username": null,
+        "password": null
+    }
 }

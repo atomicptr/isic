@@ -43,11 +43,11 @@ class DiscordHandler extends Discord.Client {
     }
 
     isAdministrator(user) {
-        return this.bot.config.administrators.indexOf(user.id) > -1
+        return this.bot.config.management.administrators.indexOf(user.id) > -1
     }
 
     isServerAdministrator(server, user) {
-        if(this.bot.config.botAdminRightsAlsoApplyInServers && this.isAdministrator(user)) {
+        if(this.bot.config.management.admin_rights_apply_in_server && this.isAdministrator(user)) {
             return true
         }
 

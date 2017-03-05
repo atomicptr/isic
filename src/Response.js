@@ -56,6 +56,14 @@ class Response {
         return this._message.channel
     }
 
+    get contextId() {
+        return this.server ? `S${this.serverId}` : `U${this.authorId}`
+    }
+
+    get autoId() {
+        return this.server ? this.serverId : this.authorId
+    }
+
     send(message) {
         let promise = this.message.channel.send(message)
 
@@ -103,8 +111,12 @@ class Response {
         return this.discord.serverEmoji(this.server, name, altText)
     }
 
-    get db() {
-        return this.bot.db(this)
+    collection(collectionName) {
+        return this.bot.database.collection(this.module, collectionName, this.server ? `S${this.serverId}` : `U${this.authorId}`)
+    }
+
+    collectionName(collectionName) {
+        return this.bot.database.collectionName(this.module, collectionName, this.server ? `S${this.serverId}` : `U${this.authorId}`)
     }
 }
 

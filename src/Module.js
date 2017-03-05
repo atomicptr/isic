@@ -44,10 +44,6 @@ class Module {
         return this._moduleConfig.identifier
     }
 
-    get mydb() {
-        return this.bot.mydb
-    }
-
     registerAction(regex, callback) {
         this._actions.push({
             trigger: regex,
@@ -163,16 +159,16 @@ class Module {
         return this.discord.isServerAdministrator(server, user)
     }
 
-    db(handle) {
-        return this.bot.db(handle)
-    }
-
     sendMessageToChannel(channel, message) {
         return channel.send(message)
     }
 
-    forEveryDatabase(condition, callback) {
-        this.bot.forEveryDatabase(condition, callback)
+    collection(collectionName, serverId) {
+        return this.bot.database.collection(this, collectionName, serverId)
+    }
+
+    collectionName(collectionName, serverId) {
+        return this.bot.database.collection(this, collectionName, serverId)
     }
 }
 

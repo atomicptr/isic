@@ -1,5 +1,5 @@
 {
     "name": "Assignable Roles",
-    "ident": "github.atomicptr.assignable-roles",
+    "identifier": "github.atomicptr.assignable-roles",
     "main": "assignable-roles.js"
 }

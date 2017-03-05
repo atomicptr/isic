@@ -49,7 +49,7 @@ class ModuleManager {
             if(exists) {
                 let modFile = require(modFilePath)
 
-                if((modFile.identifier || modFile.ident) && modFile.main) {
+                if(modFile.identifier && modFile.main) {
                     this.bot.log.info(`Module ${modPath} found.`)
 
                     let registerFunc = require(path.resolve(modPath, modFile.main))
