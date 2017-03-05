@@ -34,11 +34,15 @@ class DatabaseProvider {
     }
 
     onSetup(url) {
-        this.bot.log.debug(`trying to connect with database: ${url}`)
+        let printurl = url.replace(`${this.settings.username}:${this.settings.password}@`, `${this.settings.username}:**********@`)
+        this.bot.log.debug(`trying to connect with database: ${printurl}`)
 
         MongoClient.connect(url).then(db => {
             this.db = db
-        }).catch(this.bot.log.error)
+        }).catch(err => {
+            this.bot.log.error(err)
+            process.exit(1)
+        })
     }
 
     collection(mod, collectionName, serverId) {

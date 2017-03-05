@@ -14,5 +14,5 @@ let bot = new Bot(config)
 bot.on("ready", _ => {
     bot.log.info(`### Running github.atomicptr.isic v${packageJson.version} on Node ${process.version}`)
 
-    bot.client.user.setGame(`ISIC: v${packageJson.version}, Node: ${process.version}`)
+    bot.client.user.setGame(`isic v${packageJson.version}`)
 })
