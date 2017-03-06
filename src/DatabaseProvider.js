@@ -1,7 +1,7 @@
 const {MongoClient} = require("mongodb")
 
 class DatabaseProvider {
-    constructor(bot, settings) {
+    constructor(bot, settings, callback) {
         this.bot = bot
         this.settings = settings
 
@@ -30,15 +30,13 @@ class DatabaseProvider {
 
         this.db = null
 
-        bot.on("setup", this.onSetup.bind(this, url))
-    }
-
-    onSetup(url) {
         let printurl = url.replace(`${this.settings.username}:${this.settings.password}@`, `${this.settings.username}:**********@`)
         this.bot.log.debug(`trying to connect with database: ${printurl}`)
 
         MongoClient.connect(url).then(db => {
             this.db = db
+
+            callback()
         }).catch(err => {
             this.bot.log.error(err)
             process.exit(1)

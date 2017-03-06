@@ -44,16 +44,17 @@ class Bot extends EventEmitter {
 
         this.config = utils.assign({}, defaultSettings, config)
 
-        this._database = new DatabaseProvider(this, this.config.database)
+        // don't setup anything until the database connection is ensured
+        this._database = new DatabaseProvider(this, this.config.database, _ => {
+            this.client = new DiscordHandler(this, this.config.token)
 
-        this.client = new DiscordHandler(this, this.config.token)
+            this.moduleManager = new ModuleManager(this)
+            this.builtins = null
 
-        this.moduleManager = new ModuleManager(this)
-        this.builtins = null
+            this.isSetup = false
 
-        this.isSetup = false
-
-        this.client.on("ready", this.onReady.bind(this))
+            this.client.on("ready", this.onReady.bind(this))
+        })
     }
 
     get discord() {
