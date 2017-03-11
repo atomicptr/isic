@@ -23,5 +23,9 @@ module.exports = function(bot) {
     }
 
     bot.hear(/(?:\s|^)\+1(?=\s|$)/g, res => plus1(res))
-    bot.hear(/👍/g, res => plus1(res))
+    bot.hear(/👍/g, res => {
+        if(res.canI("ADD_REACTIONS")) {
+            message.react("👍")
+        }
+    })
 }
