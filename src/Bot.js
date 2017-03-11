@@ -112,7 +112,7 @@ class Bot extends EventEmitter {
 
             this.client.on("message", this.onMessage.bind(this))
 
-            this.intervalId = setInterval(() => this.emit("interval"), this.config.intervalInSeconds * 1000)
+            this.intervalId = setInterval(() => this.emit("interval"), this.config.interval * 1000)
 
             this.emit("setup")
             this.isSetup = true
@@ -165,6 +165,10 @@ class Bot extends EventEmitter {
 
     collectionName(collectionName, serverId) {
         return this.bot.database.collection(this.builtins, collectionName, serverId)
+    }
+
+    eachCollection(collectionName, callback) {
+        return this.bot.database.eachCollection(this.builtins, collectionName, callback)
     }
 }
 

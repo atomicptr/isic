@@ -115,8 +115,16 @@ class Response {
         return this.bot.database.collection(this.module, collectionName, this.server ? `S${this.serverId}` : `U${this.authorId}`)
     }
 
+    globalCollection(collectionName) {
+        return this.bot.database.collection(this.module, collectionName)
+    }
+
     collectionName(collectionName) {
         return this.bot.database.collectionName(this.module, collectionName, this.server ? `S${this.serverId}` : `U${this.authorId}`)
+    }
+
+    eachCollection(collectionName, callback) {
+        return this.bot.database.eachCollection(this.module, collectionName, callback)
     }
 }
 

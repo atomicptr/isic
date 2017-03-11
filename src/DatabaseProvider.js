@@ -43,6 +43,10 @@ class DatabaseProvider {
         })
     }
 
+    globalCollection(mod, collectionName) {
+        return this.db.collection(this.collectionName(mod, collectionName))
+    }
+
     collection(mod, collectionName, serverId) {
         return this.db.collection(this.collectionName(mod, collectionName, serverId))
     }
@@ -50,6 +54,23 @@ class DatabaseProvider {
     collectionName(mod, collectionName, serverId) {
         const isGlobal = typeof serverId === "undefined"
         return `${isGlobal ? "global" : serverId}::${mod.identifier}::${collectionName}`
+    }
+
+    // if you want to query collections from all servers/users might be useful for intervals
+    eachCollection(mod, collectionName, callback) {
+        return new Promise((resolve, reject) => {
+            this.db.listCollections().toArray().then(collections => {
+                let affected = collections.filter(collection => collection.name.endsWith(`::${mod.identifier}::${collectionName}`))
+
+                if(typeof callback !== "undefined") {
+                    affected.forEach(collection => {
+                        callback(this.db.collection(collection.name))
+                    })
+                }
+
+                resolve(affected.map(col => this.db.collection(col.name)))
+            })
+        })
     }
 }
 

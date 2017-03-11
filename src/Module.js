@@ -1,4 +1,5 @@
 const Response = require("./Response")
+const IntervalResponse = require("./IntervalResponse")
 
 class Module {
     constructor(bot, moduleConfig, registerFunc) {
@@ -92,7 +93,7 @@ class Module {
         for(let ident of Object.keys(this._intervalActions)) {
             try {
                 this.bot.contextLog.debug({from: this.identifier}, `interval ${ident} emitted...`)
-                this._intervalActions[ident]()
+                this._intervalActions[ident](new IntervalResponse(this.bot, this))
             } catch(ex) {
                 this.bot.contextLog.error({from: this.identifier}, `Interval "${ident}" failed`, ex)
             }
@@ -169,6 +170,14 @@ class Module {
 
     collectionName(collectionName, serverId) {
         return this.bot.database.collection(this, collectionName, serverId)
+    }
+
+    globalCollection(collectionName) {
+        return this.collection(collectionName)
+    }
+
+    eachCollection(collectionName, callback) {
+        return this.bot.database.eachCollection(this, collectionName, callback)
     }
 }
 
