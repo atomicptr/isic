@@ -1,6 +1,9 @@
 const Response = require("./Response")
 const IntervalResponse = require("./IntervalResponse")
 
+const Discord = require("discord.js")
+const DMChannel = Discord.DMChannel
+
 class Module {
     constructor(bot, moduleConfig, registerFunc) {
         this._bot = bot
@@ -105,6 +108,13 @@ class Module {
             let match = message.content.match(action.trigger)
 
             if(match) {
+                let isDM = message.channel instanceof DMChannel
+
+                if(isDM && this._moduleConfig.ignoredm) {
+                    this.bot.contextLog.debug({from: this.identifier, channel: message.channel}, `Message "${message.content}" matches, but module "${this.identifier}" ignores DMs`)
+                    continue
+                }
+
                 this.bot.contextLog.debug({from: this.identifier, channel: message.channel}, `Message "${message.content}" matched regex "${action.trigger.source}"`)
                 if(this.discord.canI(message.guild, this._moduleConfig.requiresPermission)) {
                     try {
