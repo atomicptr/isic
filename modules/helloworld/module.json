@@ -1,5 +1,5 @@
 {
     "name": "HelloWorld",
-    "ident": "github.atomicptr.HelloWorld",
+    "identifier": "github.atomicptr.HelloWorld",
     "main": "helloworld.js"
 }
