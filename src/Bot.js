@@ -7,6 +7,7 @@ const DatabaseProvider = require("./DatabaseProvider")
 
 const crypto = require("crypto")
 const request = require("request")
+const express = require("express")
 const fs = require("fs")
 const path = require("path")
 
@@ -24,8 +25,12 @@ class Bot extends EventEmitter {
             interval: 300,
             management: {
                 administrators: [],
-                webui: false,
                 admin_rights_apply_in_server: false
+            },
+            services: {
+                enabled: false,
+                port: 8080,
+                webui: false
             },
             modules: {
                 paths: [],
@@ -44,7 +49,6 @@ class Bot extends EventEmitter {
 
         this.config = utils.assign({}, defaultSettings, config)
 
-        // don't setup anything until the database connection is ensured
         this._database = new DatabaseProvider(this, this.config.database, _ => {
             this.client = new DiscordHandler(this, this.config.token)
 
@@ -53,7 +57,17 @@ class Bot extends EventEmitter {
 
             this.isSetup = false
 
-            this.client.on("ready", this.onReady.bind(this))
+            if(this.config.services.enabled) {
+                this._eapp = express()
+
+                this._eapp.listen(this.config.services.port, _ => {
+                    this.log.info(`services enabled and running on port: ${this.config.services.port}...`)
+                    this.client.on("ready", this.onReady.bind(this))
+                })
+            } else {
+                this.log.info("services disabled")
+                this.client.on("ready", this.onReady.bind(this))
+            }
         })
     }
 
@@ -149,6 +163,15 @@ class Bot extends EventEmitter {
         return this.builtins.interval(ident, callback)
     }
 
+    get service() {
+        return {
+            get: (path, callback) => this.builtins.service.get(path, callback),
+            post: (path, callback) => this.builtins.service.post(path, callback),
+            put: (path, callback) => this.builtins.service.put(path, callback),
+            delete: (path, callback) => this.builtins.service.delete(path, callback)
+        }
+    }
+
     hash(str) {
         const sha = crypto.createHash("sha256")
         sha.update(str)
@@ -169,6 +192,26 @@ class Bot extends EventEmitter {
 
     eachCollection(collectionName, callback) {
         return this.bot.database.eachCollection(this.builtins, collectionName, callback)
+    }
+
+    registerService(method, mod, path, callback) {
+        if(!this.config.services.enabled) {
+            this.log.debug(`trying to register service endpoint, but services are disabled for ${mod.identifier}::${ident}`)
+            return
+        }
+
+        let urlpath = ["service"]
+
+        if(mod.identifier !== "builtins") {
+            urlpath.push(mod.identifier)
+        }
+
+        urlpath = urlpath.concat(path.split("/").filter(part => part.length > 0))
+
+        const urlString = urlpath.join("/")
+
+        this.log.debug(`registered service endpoint ${method.toUpperCase()} /${urlString}`)
+        this._eapp[method.toLowerCase()](`/${urlString}`, callback)
     }
 }
 

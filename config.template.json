@@ -4,8 +4,13 @@
 
     "management": {
         "administrators": [],
-        "webui": false,
         "admin_rights_apply_in_server": false
+    },
+
+    "services": {
+        "enabled": false,
+        "port": 8080,
+        "webui": false
     },
 
     "modules": {

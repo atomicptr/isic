@@ -87,6 +87,20 @@ class Module {
         this._intervalActions[ident] = callback
     }
 
+    get service() {
+        let register = (method, path, callback) => {
+            this.bot.contextLog.debug({from: this.identifier}, `\tadded service ${method.toUpperCase()} ${path}`)
+            this.bot.registerService(method, this, path, callback)
+        }
+
+        return {
+            get: (path, callback) => register("get", path, callback),
+            post: (path, callback) => register("post", path, callback),
+            put: (path, callback) => register("put", path, callback),
+            delete: (path, callback) => register("delete", path, callback)
+        }
+    }
+
     removeInterval(ident) {
         this.bot.contextLog.debug({from: this.identifier}, `removed interval action ${ident}`)
         if(this._intervalActions[ident]) delete this._intervalActions[ident]
