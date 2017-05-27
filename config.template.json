@@ -10,6 +10,7 @@
     "services": {
         "enabled": false,
         "port": 8080,
+        "baseurl": "http://example.com",
         "webui": false
     },
 

@@ -188,6 +188,12 @@ class Module {
         return channel.send(message)
     }
 
+    sendEmbedToChannel(channel, message, callback) {
+        let embed = new Discord.RichEmbed()
+        callback(embed)
+        channel.sendEmbed(embed, message)
+    }
+
     collection(collectionName, serverId) {
         return this.bot.database.collection(this, collectionName, serverId)
     }
@@ -202,6 +208,10 @@ class Module {
 
     eachCollection(collectionName, callback) {
         return this.bot.database.eachCollection(this, collectionName, callback)
+    }
+
+    uuid(input) {
+        return this.bot.uuid(input)
     }
 }
 

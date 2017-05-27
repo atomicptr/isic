@@ -17,6 +17,10 @@ class DiscordHandler extends Discord.Client {
         return this.users.get(id)
     }
 
+    findChannel(id) {
+        return this.channels.get(id)
+    }
+
     hasPermission(server, user, permissions) {
         if(!server && user) {
             return true // is probably a DM

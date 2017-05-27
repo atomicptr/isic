@@ -8,6 +8,8 @@ const DatabaseProvider = require("./DatabaseProvider")
 const crypto = require("crypto")
 const request = require("request")
 const express = require("express")
+const bodyParser = require("body-parser")
+const uuid = require("uuid/v4")
 const fs = require("fs")
 const path = require("path")
 
@@ -30,6 +32,7 @@ class Bot extends EventEmitter {
             services: {
                 enabled: false,
                 port: 8080,
+                baseurl: "http://example.com",
                 webui: false
             },
             modules: {
@@ -59,6 +62,8 @@ class Bot extends EventEmitter {
 
             if(this.config.services.enabled) {
                 this._eapp = express()
+
+                this._eapp.use(bodyParser.json())
 
                 this._eapp.listen(this.config.services.port, _ => {
                     this.log.info(`services enabled and running on port: ${this.config.services.port}...`)
@@ -192,6 +197,11 @@ class Bot extends EventEmitter {
 
     eachCollection(collectionName, callback) {
         return this.bot.database.eachCollection(this.builtins, collectionName, callback)
+    }
+
+    uuid(input) {
+        if(!input) return uuid()
+        return uuid(input)
     }
 
     registerService(method, mod, path, callback) {
