@@ -55,7 +55,7 @@ class DiscordHandler extends Discord.Client {
             return true
         }
 
-        return this.discord.hasPermission(server, user, "ADMINISTRATOR")
+        return this.hasPermission(server, user, "ADMINISTRATOR")
     }
 
     emojiExists(server, name) {
